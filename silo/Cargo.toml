@@ -1,0 +1,14 @@
+[package]
+name = "silo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+log = "*"
+tracing = "*"
+tracing-subscriber = "*"
+
+gtk = { version = "*", package = "gtk4", features = ["v4_6"] }
+
+# projects
+ui-relm = { path = "../libs/ui-relm" }

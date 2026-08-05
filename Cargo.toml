@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "libs/ui-relm",
+    "silo",
+]
+resolver = "3"
