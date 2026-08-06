@@ -9,8 +9,8 @@ tracing = "*"
 tracing-subscriber = "*"
 
 #relm4 = { version = "0.10.0", features = ["macros"] }
-relm4 = { version = "0.11.0", features = ["libadwaita", "gnome_49"] }
-gtk = { version = "*", package = "gtk4", features = ["v4_6"] }
+relm4 = { version = "0.11.0", features = ["libadwaita", "gnome_50"] }
+gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
 
 
 [build-dependencies]

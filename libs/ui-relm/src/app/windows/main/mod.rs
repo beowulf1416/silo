@@ -18,7 +18,8 @@ use relm4::{
     prelude::*,
 };
 
-use crate::app::data_store_window::DataStoreWindow;
+// use crate::app::data_store_window::DataStoreWindow;
+use crate::app::components::data_store::DataStoreWindow;
 
 relm4::new_action_group!(pub(super) WindowActionGroup, "win");
 relm4::new_stateless_action!(PreferencesAction, WindowActionGroup, "preferences");
