@@ -27,6 +27,13 @@ relm4::new_stateless_action!(pub(super) ShortcutsAction, WindowActionGroup, "sho
 relm4::new_stateless_action!(AboutAction, WindowActionGroup, "about");
 relm4::new_stateless_action!(QuitAction, WindowActionGroup, "quit");
 
+relm4::new_stateless_action!(DataStoreAddAction, WindowActionGroup, "data-store-add");
+relm4::new_stateless_action!(
+    pub(super) DataSourceAddPostgresAction,
+    WindowActionGroup,
+    "data-source-add-postgres"
+);
+
 #[derive(Debug)]
 pub enum MainWindowMsg {
     Quit,
@@ -150,12 +157,26 @@ impl SimpleComponent for MainWindow {
             })
         };
 
+        let data_store_add_action = {
+            RelmAction::<DataStoreAddAction>::new_stateless(move |_| {
+                debug!("data store add action");
+            })
+        };
+
+        let data_source_add_postgres_action = {
+            RelmAction::<DataSourceAddPostgresAction>::new_stateless(move |_| {
+                debug!("data source add postgres action");
+            })
+        };
+
         // Connect action with hotkeys
         app.set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
 
         actions.add_action(shortcuts_action);
         actions.add_action(about_action);
         actions.add_action(quit_action);
+        actions.add_action(data_store_add_action);
+        actions.add_action(data_source_add_postgres_action);
         actions.register_for_widget(&widgets.main_window);
 
         // widgets.load_window_size();
