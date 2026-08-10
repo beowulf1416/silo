@@ -1,5 +1,6 @@
 use std::convert::identity;
 
+use gtk::AccessibleRole::Main;
 use tracing::debug;
 
 // use gtk::{Application, glib};
@@ -21,18 +22,20 @@ use relm4::{
 // use crate::app::data_store_window::DataStoreWindow;
 use crate::app::components::data_store_view::DataStoreView;
 
-relm4::new_action_group!(pub(super) WindowActionGroup, "win");
+use crate::app::actions::WindowActionGroup;
+// relm4::new_action_group!(pub(super) WindowActionGroup, "win");
 relm4::new_stateless_action!(PreferencesAction, WindowActionGroup, "preferences");
 relm4::new_stateless_action!(pub(super) ShortcutsAction, WindowActionGroup, "show-help-overlay");
 relm4::new_stateless_action!(AboutAction, WindowActionGroup, "about");
-relm4::new_stateless_action!(QuitAction, WindowActionGroup, "quit");
+// relm4::new_stateless_action!(QuitAction, WindowActionGroup, "quit");
+use crate::app::actions::QuitAction;
 
-relm4::new_stateless_action!(DataStoreAddAction, WindowActionGroup, "data-store-add");
-relm4::new_stateless_action!(
-    pub(super) DataSourceAddPostgresAction,
-    WindowActionGroup,
-    "data-source-add-postgres"
-);
+// relm4::new_stateless_action!(DataStoreAddAction, WindowActionGroup, "data-store-add");
+// relm4::new_stateless_action!(
+//     pub(super) DataSourceAddPostgresAction,
+//     WindowActionGroup,
+//     "data-source-add-postgres"
+// );
 
 #[derive(Debug)]
 pub enum MainWindowMsg {
@@ -157,17 +160,17 @@ impl SimpleComponent for MainWindow {
             })
         };
 
-        let data_store_add_action = {
-            RelmAction::<DataStoreAddAction>::new_stateless(move |_| {
-                debug!("data store add action");
-            })
-        };
+        // let data_store_add_action = {
+        //     RelmAction::<DataStoreAddAction>::new_stateless(move |_| {
+        //         debug!("data store add action");
+        //     })
+        // };
 
-        let data_source_add_postgres_action = {
-            RelmAction::<DataSourceAddPostgresAction>::new_stateless(move |_| {
-                debug!("data source add postgres action");
-            })
-        };
+        // let data_source_add_postgres_action = {
+        //     RelmAction::<DataSourceAddPostgresAction>::new_stateless(move |_| {
+        //         debug!("data source add postgres action");
+        //     })
+        // };
 
         // Connect action with hotkeys
         app.set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
@@ -175,8 +178,8 @@ impl SimpleComponent for MainWindow {
         actions.add_action(shortcuts_action);
         actions.add_action(about_action);
         actions.add_action(quit_action);
-        actions.add_action(data_store_add_action);
-        actions.add_action(data_source_add_postgres_action);
+        // actions.add_action(data_store_add_action);
+        // actions.add_action(data_source_add_postgres_action);
         actions.register_for_widget(&widgets.main_window);
 
         // widgets.load_window_size();
@@ -186,13 +189,16 @@ impl SimpleComponent for MainWindow {
 
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
-            MainWindowMsg::Quit => main_application().quit(),
+            // MainWindowMsg::Quit => main_application().quit(),
+            MainWindowMsg::Quit => {
+                relm4::main_adw_application().activate_action("quit", None);
+            }
         }
     }
 
     fn shutdown(&mut self, widgets: &mut Self::Widgets, _output: relm4::Sender<Self::Output>) {
         // widgets.save_window_size().unwrap();
-        debug!("//todo");
+        debug!("//todo shutdown");
     }
 }
 

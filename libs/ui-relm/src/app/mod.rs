@@ -11,11 +11,12 @@ use gtk::{ApplicationWindow, prelude::*};
 use relm4::{actions::*, main_application, prelude::*};
 
 // use crate::app::main_window::MainWindowMsg;
-use crate::app::windows::main::MainWindow;
+use crate::app::windows::main::{MainWindow, MainWindowMsg};
 
 use crate::app::actions::ApplicationActionGroup;
 use crate::app::actions::DataSourceAddPostgresAction;
 use crate::app::actions::DataStoreAddAction;
+use crate::app::actions::QuitAction;
 
 const APP_ID: &str = "org.devphilplus.silo";
 
@@ -34,6 +35,8 @@ pub struct App {
 
 impl App {
     pub fn run() {
+        debug!("starting...");
+
         gtk::init().unwrap();
         gtk::Window::set_default_icon_name(APP_ID);
 
@@ -55,6 +58,14 @@ impl App {
             })
         };
         action_group.add_action(data_source_add_postgres_action);
+
+        let quit_action = {
+            RelmAction::<QuitAction>::new_stateless(move |_| {
+                debug!("quitting...");
+                main_application().quit();
+            })
+        };
+        action_group.add_action(quit_action);
 
         action_group.register_for_main_application();
 

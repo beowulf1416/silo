@@ -73,37 +73,70 @@ impl SimpleComponent for DataStoreTree {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let sample_stores = vec![Store {
-            name: String::from("store 1"),
-            object_types: vec![
-                StoreObjectType {
-                    name: String::from("Schemas"),
-                    object_types: vec![
-                        StoreObjectType {
-                            name: String::from("dbo"),
-                            object_types: vec![],
-                        },
-                        StoreObjectType {
-                            name: String::from("public"),
-                            object_types: vec![],
-                        },
-                    ],
-                },
-                StoreObjectType {
-                    name: String::from("Security"),
-                    object_types: vec![
-                        StoreObjectType {
-                            name: String::from("Users"),
-                            object_types: vec![],
-                        },
-                        StoreObjectType {
-                            name: String::from("Roles"),
-                            object_types: vec![],
-                        },
-                    ],
-                },
-            ],
-        }];
+        let sample_stores = vec![
+            Store {
+                name: String::from("store 1"),
+                object_types: vec![
+                    StoreObjectType {
+                        name: String::from("Schemas"),
+                        object_types: vec![
+                            StoreObjectType {
+                                name: String::from("dbo"),
+                                object_types: vec![],
+                            },
+                            StoreObjectType {
+                                name: String::from("public"),
+                                object_types: vec![],
+                            },
+                        ],
+                    },
+                    StoreObjectType {
+                        name: String::from("Security"),
+                        object_types: vec![
+                            StoreObjectType {
+                                name: String::from("Users"),
+                                object_types: vec![],
+                            },
+                            StoreObjectType {
+                                name: String::from("Roles"),
+                                object_types: vec![],
+                            },
+                        ],
+                    },
+                ],
+            },
+            Store {
+                name: String::from("store 2"),
+                object_types: vec![
+                    StoreObjectType {
+                        name: String::from("Schemas"),
+                        object_types: vec![
+                            StoreObjectType {
+                                name: String::from("dbo"),
+                                object_types: vec![],
+                            },
+                            StoreObjectType {
+                                name: String::from("public"),
+                                object_types: vec![],
+                            },
+                        ],
+                    },
+                    StoreObjectType {
+                        name: String::from("Security"),
+                        object_types: vec![
+                            StoreObjectType {
+                                name: String::from("Users"),
+                                object_types: vec![],
+                            },
+                            StoreObjectType {
+                                name: String::from("Roles"),
+                                object_types: vec![],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ];
 
         let lstore = gio::ListStore::new::<glib::BoxedAnyObject>();
         for store in sample_stores {

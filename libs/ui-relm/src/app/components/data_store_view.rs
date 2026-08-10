@@ -1,7 +1,10 @@
 use tracing::debug;
 
-use gtk::{Widget, gio, glib, prelude::*};
-use std::cell::Ref;
+use gtk::{
+    Widget, gio, glib,
+    prelude::{BoxExt, *},
+};
+use std::{cell::Ref, convert::identity};
 
 use relm4::{
     Component,
@@ -13,31 +16,31 @@ use relm4::{
     prelude::*,
 };
 
-// use crate::app::windows::main::DataSourceAddPostgresAction;
-use crate::app::actions::DataSourceAddPostgresAction;
-// use crate::app::actions::DataStoreAddAction;
 use crate::app::windows::main::MainWindowMsg;
+use crate::app::{
+    actions::DataSourceAddPostgresAction, components::data_store_tree::DataStoreTree,
+};
 
-#[derive(Debug)]
-enum Node {
-    Store(Store),
-    Object(String),
-}
+// #[derive(Debug)]
+// enum Node {
+//     Store(Store),
+//     Object(String),
+// }
 
-impl Node {
-    fn display_name(&self) -> &str {
-        match self {
-            Node::Store(store) => &store.name,
-            Node::Object(name) => name,
-        }
-    }
-}
+// impl Node {
+//     fn display_name(&self) -> &str {
+//         match self {
+//             Node::Store(store) => &store.name,
+//             Node::Object(name) => name,
+//         }
+//     }
+// }
 
-#[derive(Debug)]
-struct Store {
-    pub name: String,
-    pub objects: Vec<String>,
-}
+// #[derive(Debug)]
+// struct Store {
+//     pub name: String,
+//     pub objects: Vec<String>,
+// }
 
 #[derive(Debug)]
 pub enum DataStoreViewInputMsg {
@@ -49,9 +52,10 @@ pub enum DataStoreViewInputMsg {
 //     // tv: gtk::ColumnView,
 // }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DataStoreView {
     // pub stores: Vec<Store>,
+    pub data_store_tree: Controller<DataStoreTree>,
 }
 
 #[relm4::component(pub)]
@@ -95,6 +99,8 @@ impl SimpleComponent for DataStoreView {
                     set_action_name: Some("win.database-new")
                 }
             },
+
+            model.data_store_tree.widget(),
         }
     }
 
@@ -219,7 +225,13 @@ impl SimpleComponent for DataStoreView {
 
         // return ComponentParts { model, widgets };
 
-        let model = Self {};
+        let dst = DataStoreTree::builder()
+            .launch(())
+            .forward(sender.input_sender(), identity);
+
+        let model = Self {
+            data_store_tree: dst,
+        };
         let widgets = view_output!();
 
         return ComponentParts { model, widgets };
@@ -235,6 +247,6 @@ impl SimpleComponent for DataStoreView {
 
     fn shutdown(&mut self, widgets: &mut Self::Widgets, _output: relm4::Sender<Self::Output>) {
         // widgets.save_window_size().unwrap();
-        debug!("//todo");
+        debug!("//todo shutdown");
     }
 }
