@@ -19,7 +19,7 @@ use relm4::{
 };
 
 // use crate::app::data_store_window::DataStoreWindow;
-use crate::app::components::data_store::DataStoreWindow;
+use crate::app::components::data_store_view::DataStoreView;
 
 relm4::new_action_group!(pub(super) WindowActionGroup, "win");
 relm4::new_stateless_action!(PreferencesAction, WindowActionGroup, "preferences");
@@ -34,7 +34,7 @@ pub enum MainWindowMsg {
 
 #[derive(Debug)]
 pub struct MainWindow {
-    data_store: Controller<DataStoreWindow>,
+    dsv: Controller<DataStoreView>,
 }
 
 #[relm4::component(pub)]
@@ -102,7 +102,7 @@ impl SimpleComponent for MainWindow {
 
                     #[wrap(Some)]
                     set_start_child = &gtk::Box {
-                        append = model.data_store.widget(),
+                        append = model.dsv.widget(),
                     },
 
                     #[wrap(Some)]
@@ -120,11 +120,11 @@ impl SimpleComponent for MainWindow {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let data_store = DataStoreWindow::builder()
+        let dsv = DataStoreView::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
 
-        let model = Self { data_store };
+        let model = Self { dsv: dsv };
         let widgets = view_output!();
 
         let app = root.application().unwrap();

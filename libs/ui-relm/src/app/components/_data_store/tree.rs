@@ -64,6 +64,7 @@ impl SimpleComponent for Tree {
         root: Self::Root,
         _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        debug!("init");
         // let model = Self {};
         // let widgets = view_output!();
 
@@ -102,16 +103,27 @@ impl SimpleComponent for Tree {
         });
         let selection = gtk::SingleSelection::builder().model(&model).build();
         let tv = gtk::ColumnView::builder().model(&selection).build();
+        tv.set_vexpand(true);
+        tv.set_hexpand(true);
 
         let name_factory = gtk::SignalListItemFactory::new();
         name_factory.connect_setup(|_factory, item| {
+            debug!("{:?}", item);
+            // let node = item.downcast_ref::<glib::BoxedAnyObject>().unwrap();
+            // let node: Ref<Node> = node.borrow();
+
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let expander = gtk::TreeExpander::new();
             let label = gtk::Label::new(None);
+            // let label = gtk::Label::new(Some(&node.name));
             label.set_xalign(0.0);
             expander.set_child(Some(&label));
             item.set_child(Some(&expander));
         });
+
+        // name_factory.connect_bind(|_factory, item| {
+        //     let label = item.child().and_downcast().unwrap();
+        // });
 
         let name_column = gtk::ColumnViewColumn::builder()
             .factory(&name_factory)

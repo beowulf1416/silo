@@ -1,4 +1,5 @@
 pub mod tree;
+pub mod tree_view;
 
 use std::convert::identity;
 use tracing::debug;
@@ -20,7 +21,8 @@ use relm4::{
 };
 
 // use crate::app::main_window::MainWindowMsg;
-use crate::app::components::data_store::tree::Tree;
+// use crate::app::components::data_store::tree::Tree;
+use crate::app::components::data_store::tree_view::{TreeViewMsg, TreeViewNode};
 use crate::app::windows::main::MainWindowMsg;
 
 #[derive(Debug)]
@@ -30,7 +32,7 @@ pub enum DataStoreMsg {
 
 #[derive(Debug)]
 pub struct DataStoreWindow {
-    pub tree: Controller<Tree>,
+    pub tree: Controller<TreeViewNode>,
 }
 
 // pub struct DataStoreWidgets {
@@ -63,8 +65,6 @@ impl SimpleComponent for DataStoreWindow {
                     set_action_name: Some("win.database-new")
                 }
             },
-
-            model.tree.widget(),
         }
     }
 
@@ -81,8 +81,14 @@ impl SimpleComponent for DataStoreWindow {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let tree = Tree::builder()
-            .launch(())
+        let nodes = FactoryVecDeque::builder()
+            .launch(gtk::Box::default())
+            .forward(sender.input_sender(), |output| match output {
+                TreeViewMsg::ToggleNode(index) => MainWindowMsg::ToggleNode(index),
+            });
+
+        let tree = TreeViewNode::builder()
+            .launch(nodes)
             .forward(sender.input_sender(), identity);
 
         let model = Self { tree: tree };
