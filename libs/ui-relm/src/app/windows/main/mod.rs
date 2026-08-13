@@ -20,7 +20,8 @@ use relm4::{
 };
 
 // use crate::app::data_store_window::DataStoreWindow;
-use crate::app::components::data_store_view::DataStoreView;
+// use crate::app::components::data_store_view::DataStoreView;
+use crate::app::components::data_source_view::DataSourceView;
 
 use crate::app::actions::WindowActionGroup;
 // relm4::new_action_group!(pub(super) WindowActionGroup, "win");
@@ -44,7 +45,7 @@ pub enum MainWindowMsg {
 
 #[derive(Debug)]
 pub struct MainWindow {
-    dsv: Controller<DataStoreView>,
+    dsv: Controller<DataSourceView>,
 }
 
 #[relm4::component(pub)]
@@ -130,7 +131,7 @@ impl SimpleComponent for MainWindow {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let dsv = DataStoreView::builder()
+        let dsv = DataSourceView::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
 
