@@ -5,5 +5,7 @@ fn main() {
 
     info!("Starting silo...");
 
-    ui_relm::App::run();
+    let silo = silo_base::Silo::new();
+
+    ui_relm::App::run(&silo);
 }

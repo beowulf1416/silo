@@ -1,16 +1,19 @@
-use tracing::debug;
+use tracing::{debug, error};
 
 use super::*;
 
-use std::rc::Rc;
 use gtk::prelude::*;
 use relm4::{actions::*, main_application, prelude::*};
+use std::rc::Rc;
 
 use crate::app::windows::main::MainWindow;
 
 relm4::new_stateless_action!(pub NewWorkspaceAction, ApplicationActionGroup, "new-workspace");
 
-pub fn new_workspace_action(sender: Rc<ComponentSender<MainWindow>>, parent: adw::ApplicationWindow) -> RelmAction<NewWorkspaceAction> {
+pub fn new_workspace_action(
+    sender: Rc<ComponentSender<MainWindow>>,
+    parent: adw::ApplicationWindow,
+) -> RelmAction<NewWorkspaceAction> {
     let window = parent.upcast::<gtk::Window>();
 
     return RelmAction::<NewWorkspaceAction>::new_stateless(move |_| {
@@ -29,6 +32,15 @@ pub fn new_workspace_action(sender: Rc<ComponentSender<MainWindow>>, parent: adw
         let sender = sender.clone();
         dialog.select_folder(Some(&window), gtk::gio::Cancellable::NONE, move |result| {
             debug!("select_folder result: {:?}", result);
+
+            match result {
+                Err(e) => {
+                    error!("select_folder error: {:?}", e);
+                }
+                Ok(path) => {
+                    debug!("select_folder path: {:?}", path);
+                }
+            }
         });
     });
 }

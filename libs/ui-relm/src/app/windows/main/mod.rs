@@ -9,7 +9,6 @@ use gtk::prelude::{
     ActionableExt, ApplicationExt, ButtonExt, GtkWindowExt, OrientableExt, SettingsExt, WidgetExt,
 };
 use gtk::{gio, glib};
-use gtk::AccessibleRole::Main;
 
 use crate::{APP_ID, PROFILE};
 // use relm4::gtk4::prelude::ActionableExt;
@@ -20,27 +19,29 @@ use relm4::{
     prelude::*,
 };
 
-
 use crate::app::components::data_source_view::DataSourceView;
 // use crate::app::components::data_source_dialog::DataSourceDialog;
 
 use crate::app::actions::*;
 
+type FilePath = String;
 
 #[derive(Debug)]
 pub enum MainWindowMsg {
     Quit,
+    WorkspaceChanged(FilePath),
 }
 
 #[derive(Debug)]
 pub struct MainWindow {
+    silo: silo_base::Silo,
     window: adw::ApplicationWindow,
     dsv: Controller<DataSourceView>,
 }
 
 #[relm4::component(pub)]
 impl SimpleComponent for MainWindow {
-    type Init = ();
+    type Init = silo_base::Silo;
     type Input = MainWindowMsg;
     type Output = ();
     type Widgets = AppWidgets;
@@ -129,7 +130,7 @@ impl SimpleComponent for MainWindow {
     }
 
     fn init(
-        _init: Self::Init,
+        init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
@@ -138,8 +139,9 @@ impl SimpleComponent for MainWindow {
             .forward(sender.input_sender(), identity);
 
         let model = Self {
+            silo: init,
             window: root.clone(),
-            dsv: dsv
+            dsv: dsv,
         };
         let widgets = view_output!();
 
@@ -181,12 +183,14 @@ impl SimpleComponent for MainWindow {
 
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
-            // MainWindowMsg::Quit => main_application().quit(),
             MainWindowMsg::Quit => {
                 debug!("quit action triggered");
                 // need to disambiguate between widgetext and actiongroupexit
                 // self.window.activate_action("app.quit", None).unwrap();
                 gtk::prelude::WidgetExt::activate_action(&self.window, "app.quit", None).unwrap();
+            }
+            MainWindowMsg::WorkspaceChanged(path) => {
+                debug!("workspace changed: {:?}", path);
             }
         }
     }

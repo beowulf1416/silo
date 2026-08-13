@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "libs/silo-base",
     "libs/ui-relm",
     "silo"
 ]

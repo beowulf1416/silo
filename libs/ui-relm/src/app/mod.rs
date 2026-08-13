@@ -8,43 +8,34 @@ use tracing::debug;
 
 use std::rc::Rc;
 
-
 // use gtk::{Application, glib};
-use gtk::{ApplicationWindow, prelude::{ *, ApplicationExt}};
+use gtk::{
+    ApplicationWindow,
+    prelude::{ApplicationExt, *},
+};
 // use gtk::prelude::{
 //     ActionableExt, ApplicationExt, ButtonExt, GtkWindowExt, OrientableExt, SettingsExt, WidgetExt,
 // };
-use relm4::{actions::{*, AccelsPlus}, main_application, prelude::*};
+use relm4::{
+    actions::{AccelsPlus, *},
+    main_application,
+    prelude::*,
+};
 
-// use crate::app::main_window::MainWindowMsg;
 use crate::app::windows::main::{MainWindow, MainWindowMsg};
+use silo_base::Silo;
 
-use crate::app::actions::*;
-// use crate::app::actions::ApplicationActionGroup;
-// use crate::app::actions::DataSourceAddPostgresAction;
-// use crate::app::actions::DataStoreAddAction;
-// use crate::app::actions::QuitAction;
-//
+// use crate::app::actions::*;
 
-// use crate::app::actions::WindowActionGroup;
-
-const APP_ID: &str = "org.devphilplus.silo";
-
-// relm4::new_action_group!(ApplicationActionGroup, "app");
-// relm4::new_stateless_action!(DataStoreAddAction, ApplicationActionGroup, "data-store-add");
-// relm4::new_stateless_action!(
-//     DataSourceAddPostgresAction,
-//     ApplicationActionGroup,
-//     "data-source-add-postgres"
-// );
+use crate::APP_ID;
+// const APP_ID: &str = "org.devphilplus.silo";
 
 pub struct App {
-    // app: RelmApp<MainWindowMsg>,
-    // window: ApplicationWindow,
+    silo: Silo,
 }
 
 impl App {
-    pub fn run() {
+    pub fn run(silo: &Silo) {
         debug!("starting...");
 
         gtk::init().unwrap();
@@ -61,11 +52,8 @@ impl App {
         // let main_window = controller.widget();
         // let sender: Rc<ComponentSender<MainWindow>> = Rc::new(controller.sender());
 
-
         // actions
         // let mut action_group = RelmActionGroup::<ApplicationActionGroup>::new();
-
-
 
         // let quit_action = {
         //     RelmAction::<QuitAction>::new_stateless(move |_| {
@@ -84,6 +72,7 @@ impl App {
 
         // action_group.register_for_main_application();
 
-        app.visible_on_activate(false).run::<MainWindow>(());
+        app.visible_on_activate(false)
+            .run::<MainWindow>(silo.clone());
     }
 }

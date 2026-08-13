@@ -744,10 +744,15 @@ version = "0.1.0"
 dependencies = [
  "gtk4",
  "log",
+ "silo-base",
  "tracing",
  "tracing-subscriber",
  "ui-relm",
 ]
+
+[[package]]
+name = "silo-base"
+version = "0.1.0"
 
 [[package]]
 name = "slab"
@@ -945,6 +950,7 @@ dependencies = [
  "gtk4",
  "log",
  "relm4",
+ "silo-base",
  "tracing",
  "tracing-subscriber",
 ]
