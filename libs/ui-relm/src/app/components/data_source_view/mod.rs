@@ -63,11 +63,23 @@ impl SimpleComponent for DataSourceView {
         gtk::Box {
             set_orientation: gtk::Orientation::Vertical,
 
+            gtk::Label {
+                set_label: "Data Sources",
+                set_align: gtk::Align::Start,
+                set_margin_start: 4,
+                set_margin_top: 4,
+            },
+
             gtk::ActionBar {
                 set_hexpand: true,
 
                 pack_start = &gtk::MenuButton {
-                    set_icon_name: "open-menu-symbolic",
+                    set_icon_name: "list-add-symbolic",
+                    set_menu_model: Some(&data_store_add_menu),
+                },
+
+                pack_start = &gtk::MenuButton {
+                    set_icon_name: "list-remove-symbolic",
                     set_menu_model: Some(&data_store_add_menu),
                 },
 
