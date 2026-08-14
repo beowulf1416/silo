@@ -3,7 +3,9 @@ use std::convert::identity;
 use tracing::debug;
 
 use std::rc::Rc;
+
 // use gtk::{Application, glib};
+use gtk::gio::File;
 use gtk::prelude::*;
 use gtk::prelude::{
     ActionableExt, ApplicationExt, ButtonExt, GtkWindowExt, OrientableExt, SettingsExt, WidgetExt,
@@ -85,7 +87,8 @@ impl SimpleComponent for MainWindow {
 
                 adw::HeaderBar {
                     pack_start = &gtk::MenuButton {
-                        set_icon_name: "open-menu-symbolic",
+                        // set_icon_name: "open-menu-symbolic",
+                        set_icon_name: "silo",
                         set_menu_model: Some(&primary_menu),
                     },
                     pack_end = &gtk::MenuButton {
@@ -191,6 +194,7 @@ impl SimpleComponent for MainWindow {
             }
             MainWindowMsg::WorkspaceChanged(path) => {
                 debug!("workspace changed: {:?}", path);
+                self.silo.set_workspace(path);
             }
         }
     }

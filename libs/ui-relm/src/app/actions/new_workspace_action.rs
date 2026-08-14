@@ -39,6 +39,12 @@ pub fn new_workspace_action(
                 }
                 Ok(path) => {
                     debug!("select_folder path: {:?}", path);
+                    if let Some(path) = path.path() {
+                        let path_string = path.to_string_lossy().into_owned();
+                        sender.input(MainWindowMsg::WorkspaceChanged(path_string));
+                    } else {
+                        error!("select_folder path is None");
+                    }
                 }
             }
         });

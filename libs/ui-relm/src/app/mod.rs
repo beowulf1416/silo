@@ -6,13 +6,11 @@ pub mod windows;
 use tracing::debug;
 // use main_window::MainWindow;
 
+// use std::env;
 use std::rc::Rc;
 
 // use gtk::{Application, glib};
-use gtk::{
-    ApplicationWindow,
-    prelude::{ApplicationExt, *},
-};
+use gtk::{ApplicationWindow, gdk, gio, glib, prelude::ApplicationExt};
 // use gtk::prelude::{
 //     ActionableExt, ApplicationExt, ButtonExt, GtkWindowExt, OrientableExt, SettingsExt, WidgetExt,
 // };
@@ -39,38 +37,34 @@ impl App {
         debug!("starting...");
 
         gtk::init().unwrap();
+
+        let resource_bytes = glib::Bytes::from_static(include_bytes!(concat!(
+            env!("OUT_DIR"),
+            "/org.devphilplus.silo.gresource"
+        )));
+        let resource = gio::Resource::from_data(&resource_bytes).unwrap();
+        gio::resources_register(&resource);
+
         gtk::Window::set_default_icon_name(APP_ID);
 
         let gtk_app = main_application();
+
+        gtk_app.connect_startup(|app| {
+            let display = gdk::Display::default().unwrap();
+            let theme = gtk::IconTheme::for_display(&display);
+            theme.add_resource_path("/org/devphilplus/silo/images");
+        });
+
         let app = RelmApp::from_app(gtk_app);
 
-        // // build the window
-        // let controller = MainWindow::builder()
-        //     .launch(())
-        //     .detach();
+        // relm4_icons::initialize_icons();
 
-        // let main_window = controller.widget();
-        // let sender: Rc<ComponentSender<MainWindow>> = Rc::new(controller.sender());
+        // gio::resources_register_include!("org.devphilplus.silo.gresource")
+        //     .expect("failed to register resources");
 
-        // actions
-        // let mut action_group = RelmActionGroup::<ApplicationActionGroup>::new();
-
-        // let quit_action = {
-        //     RelmAction::<QuitAction>::new_stateless(move |_| {
-        //         debug!("quitting...");
-        //         main_application().quit();
-        //     })
-        // };
-        // action_group.add_action(quit_action);
-
-        // let quit_action = quit_action(sender.clone());
-        // action_group.add_action(quit_action);
-        // gtk_app.set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
-
-        // let new_workspace_action = new_workspace_action(sender.clone());
-        // action_group.add_action(new_workspace_action);
-
-        // action_group.register_for_main_application();
+        // let display = gdk::Display::default().unwrap();
+        // let theme = gtk::IconTheme::for_display(&display);
+        // theme.add_resource_path("/org/devphilplus/silo/images");
 
         app.visible_on_activate(false)
             .run::<MainWindow>(silo.clone());

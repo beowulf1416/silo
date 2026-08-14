@@ -10,6 +10,7 @@ tracing-subscriber = "*"
 
 #relm4 = { version = "0.10.0", features = ["macros"] }
 relm4 = { version = "0.11.0", features = ["libadwaita", "gnome_50"] }
+relm4-icons = "*"
 gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
 
 # projects
@@ -18,3 +19,5 @@ silo-base = { path = "../silo-base" }
 
 [build-dependencies]
 gio = "*"
+glib-build-tools = "*"
+relm4-icons-build = "*"
