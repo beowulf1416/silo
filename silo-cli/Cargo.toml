@@ -1,0 +1,14 @@
+[package]
+name = "silo-cli"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tracing = "*"
+tracing-subscriber = "*"
+
+clap = "*"
+
+# projects
+silo-base = { path = "../libs/silo-base" }
+silo-plugin = { path = "../libs/silo-plugin" }

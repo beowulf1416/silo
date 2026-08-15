@@ -1,7 +1,10 @@
 [workspace]
 members = [
     "libs/silo-base",
+    "libs/silo-plugin",
     "libs/ui-relm",
-    "silo"
+    "plugins/plugin-postgres",
+    "silo",
+    "silo-cli",
 ]
 resolver = "3"
