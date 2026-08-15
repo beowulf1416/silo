@@ -1,16 +1,20 @@
+mod new_data_source_postgres_action;
 mod new_workspace_action;
 
-use tracing::debug;
-use std::rc::Rc;
 use gtk::prelude::ApplicationExt;
 use relm4::{actions::*, main_application, prelude::*};
+use std::rc::Rc;
+use tracing::debug;
 
-use crate::app::windows::main::{ MainWindow, MainWindowMsg};
+use crate::app::windows::main::{MainWindow, MainWindowMsg};
 
 relm4::new_action_group!(pub ApplicationActionGroup, "app");
 // relm4::new_action_group!(pub(super) WindowActionGroup, "win");
 
-pub(crate) use new_workspace_action::{new_workspace_action, NewWorkspaceAction};
+pub(crate) use new_data_source_postgres_action::{
+    NewDataSourcePostGresAction, new_data_source_postgres_action,
+};
+pub(crate) use new_workspace_action::{NewWorkspaceAction, new_workspace_action};
 
 relm4::new_stateless_action!(pub QuitAction, ApplicationActionGroup, "quit");
 pub fn quit_action(sender: Rc<ComponentSender<MainWindow>>) -> RelmAction<QuitAction> {
@@ -22,7 +26,9 @@ pub fn quit_action(sender: Rc<ComponentSender<MainWindow>>) -> RelmAction<QuitAc
 }
 
 relm4::new_stateless_action!(pub PreferencesAction, ApplicationActionGroup, "preferences");
-pub fn preferences_action(sender: Rc<ComponentSender<MainWindow>>) -> RelmAction<PreferencesAction> {
+pub fn preferences_action(
+    sender: Rc<ComponentSender<MainWindow>>,
+) -> RelmAction<PreferencesAction> {
     return RelmAction::<PreferencesAction>::new_stateless(move |_| {
         // PreferencesDialog::builder().launch(()).detach();
         debug!("preferences action");
@@ -45,5 +51,5 @@ pub fn shortcuts_action(sender: Rc<ComponentSender<MainWindow>>) -> RelmAction<S
     });
 }
 
-relm4::new_stateless_action!(pub DataStoreAddAction, ApplicationActionGroup, "data-store-add");
-relm4::new_stateless_action!(pub DataSourceAddPostgresAction, ApplicationActionGroup, "data-store-add-postgres");
+// relm4::new_stateless_action!(pub DataStoreAddAction, ApplicationActionGroup, "data-store-add");
+// relm4::new_stateless_action!(pub DataSourceAddPostgresAction, ApplicationActionGroup, "data-store-add-postgres");

@@ -8,3 +8,10 @@ tracing = "*"
 
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
+
+
+# projects
+silo-plugin = { path = "../silo-plugin" }
+
+# temporary
+#plugin-postgres = { path = "../../plugins/plugin-postgres" }

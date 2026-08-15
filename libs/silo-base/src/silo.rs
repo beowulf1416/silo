@@ -1,24 +1,32 @@
+use silo_plugin::Plugin;
 use tracing::{debug, error};
 
-use std::fs::File;
+use std::collections::HashMap;
 use std::io::BufWriter;
 use std::path::Path;
+use std::{fs::File, hash::Hash};
 
 use serde::{Deserialize, Serialize};
 
 use crate::connection::Connection;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Silo {
     workspace_path: String,
     connections: Vec<Connection>,
+
+    #[serde(skip_serializing, skip_deserializing)]
+    plugins: HashMap<String, Box<dyn Plugin>>,
 }
 
 impl Silo {
     pub fn new() -> Self {
+        // register plugins
+
         return Self {
             workspace_path: String::from(""),
             connections: Vec::new(),
+            plugins: HashMap::new(),
         };
     }
 

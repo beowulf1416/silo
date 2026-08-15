@@ -29,11 +29,11 @@ use crate::APP_ID;
 // const APP_ID: &str = "org.devphilplus.silo";
 
 pub struct App {
-    silo: Silo,
+    silo: Rc<Silo>,
 }
 
 impl App {
-    pub fn run(silo: &Silo) {
+    pub fn run(silo: Silo) {
         debug!("starting...");
 
         gtk::init().unwrap();
@@ -66,7 +66,6 @@ impl App {
         // let theme = gtk::IconTheme::for_display(&display);
         // theme.add_resource_path("/org/devphilplus/silo/images");
 
-        app.visible_on_activate(false)
-            .run::<MainWindow>(silo.clone());
+        app.visible_on_activate(false).run::<MainWindow>(silo);
     }
 }

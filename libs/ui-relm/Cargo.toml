@@ -15,6 +15,7 @@ gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
 
 # projects
 silo-base = { path = "../silo-base" }
+silo-plugin = { path = "../silo-plugin" }
 
 
 [build-dependencies]

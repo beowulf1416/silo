@@ -1,4 +1,4 @@
-// pub mod editor;
+pub mod editor;
 // pub mod tab;
 
 use tracing::debug;
@@ -102,6 +102,8 @@ impl SimpleComponent for EditorView {
     ) -> ComponentParts<Self> {
         let model = Self {};
         let widgets = view_output!();
+
+        // let _nb = &widgets.nb;
 
         return ComponentParts { model, widgets };
     }

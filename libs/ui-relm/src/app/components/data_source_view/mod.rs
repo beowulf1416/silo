@@ -23,7 +23,7 @@ use relm4::{
 use crate::app::components::data_source_view::tree::DataSourceTree;
 use crate::app::windows::main::MainWindowMsg;
 use crate::app::{
-    actions::DataSourceAddPostgresAction,
+    actions::NewDataSourcePostGresAction,
     // components::data_store_tree::DataStoreTree,
     // components::data_source_view::tree::DataSourceTree,
 };
@@ -49,9 +49,9 @@ impl SimpleComponent for DataSourceView {
     menu! {
         data_store_add_menu: {
             section! {
-                "PostgreSQL" => DataSourceAddPostgresAction,
-                "MySQL" => DataSourceAddPostgresAction,
-                "MSSQL" => DataSourceAddPostgresAction,
+                "PostgreSQL" => NewDataSourcePostGresAction,
+                "MySQL" => NewDataSourcePostGresAction,
+                "MSSQL" => NewDataSourcePostGresAction,
             }
         }
     }

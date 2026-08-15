@@ -2,6 +2,7 @@ use std::convert::identity;
 
 use tracing::debug;
 
+use std::collections::HashMap;
 use std::rc::Rc;
 
 // use gtk::{Application, glib};
@@ -22,7 +23,12 @@ use relm4::{
 };
 
 use crate::app::components::data_source_view::DataSourceView;
-use crate::app::components::editor_view::EditorView;
+use crate::app::components::editor_view::{
+    EditorView,
+    editor::{EditorPlugin, TextEditorPlugin},
+};
+use crate::app::models::data_source::DataSourcePlugin;
+use crate::app::models::plugins::postgres::PostgresDataSourcePlugin;
 // use crate::app::components::data_source_dialog::DataSourceDialog;
 
 use crate::app::actions::*;
@@ -33,6 +39,7 @@ type FilePath = String;
 pub enum MainWindowMsg {
     Quit,
     WorkspaceChanged(FilePath),
+    NewDataSourcePostgres,
 }
 
 #[derive(Debug)]
@@ -41,6 +48,28 @@ pub struct MainWindow {
     window: adw::ApplicationWindow,
     dsv: Controller<DataSourceView>,
     ed: Controller<EditorView>,
+    data_source_plugins: HashMap<String, Box<dyn DataSourcePlugin>>,
+    editor_plugins: Vec<Box<dyn EditorPlugin>>,
+}
+
+impl MainWindow {
+    pub fn register_data_source_plugins() -> HashMap<String, Box<dyn DataSourcePlugin>> {
+        let mut plugins: HashMap<String, Box<dyn DataSourcePlugin>> = HashMap::new();
+
+        let plugin: Box<dyn DataSourcePlugin> = Box::new(PostgresDataSourcePlugin::new());
+        plugins.insert("postgres".to_string(), plugin);
+
+        return plugins;
+    }
+
+    pub fn register_editor_plugins() -> Vec<Box<dyn EditorPlugin>> {
+        let mut plugins: Vec<Box<dyn EditorPlugin>> = Vec::new();
+
+        let plugin: Box<dyn EditorPlugin> = Box::new(TextEditorPlugin::new());
+        plugins.push(plugin);
+
+        return plugins;
+    }
 }
 
 #[relm4::component(pub)]
@@ -147,6 +176,9 @@ impl SimpleComponent for MainWindow {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let data_source_plugins = Self::register_data_source_plugins();
+        let editor_plugins = Self::register_editor_plugins();
+
         let dsv = DataSourceView::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
@@ -160,6 +192,8 @@ impl SimpleComponent for MainWindow {
             window: root.clone(),
             dsv: dsv,
             ed: ed,
+            data_source_plugins: data_source_plugins,
+            editor_plugins: editor_plugins,
         };
         let widgets = view_output!();
 
@@ -187,6 +221,10 @@ impl SimpleComponent for MainWindow {
         let new_workspace_action = new_workspace_action(rc_sender.clone(), model.window.clone());
         actions.add_action(new_workspace_action);
 
+        let new_data_source_action =
+            new_data_source_postgres_action(rc_sender.clone(), model.window.clone());
+        actions.add_action(new_data_source_action);
+
         // Connect action with hotkeys
         app.set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
 
@@ -210,6 +248,12 @@ impl SimpleComponent for MainWindow {
             MainWindowMsg::WorkspaceChanged(path) => {
                 debug!("workspace changed: {:?}", path);
                 self.silo.set_workspace(path);
+            }
+            MainWindowMsg::NewDataSourcePostgres => {
+                debug!("new data source postgres action triggered");
+                let plugin: &Box<dyn DataSourcePlugin> =
+                    self.data_source_plugins.get("postgres").unwrap();
+                debug!("data source postgres plugin: {:?}", plugin.name());
             }
         }
     }

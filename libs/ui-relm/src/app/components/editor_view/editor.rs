@@ -4,45 +4,74 @@ use gtk::{Widget, prelude::*};
 use relm4::{FactorySender, prelude::*};
 
 // use crate::app::components::
-use crate::app::components::editor_view::TabInputMsg;
+// use crate::app::components::editor_view::TabInputMsg;
 
-pub trait Editor: std::fmt::Debug {
-    pub fn content_type(&self) -> String;
-    pub fn build_widget(&self, sender: FactorySender<Tab>) -> gtk::Widget;
+// pub trait Editor: std::fmt::Debug {
+//     pub fn content_type(&self) -> String;
+//     pub fn build_widget(&self, sender: FactorySender<Tab>) -> gtk::Widget;
+// }
+
+// #[derive(Debug)]
+// pub struct TextEditor {
+//     buffer: gtk::TextBuffer,
+// }
+
+// impl TextEditor {
+//     fn new() -> Self {
+//         return Self {
+//             buffer: gtk::TextBuffer::new(None),
+//         };
+//     }
+// }
+
+// impl Editor for TextEditor {
+//     fn content_type(&self) -> String {
+//         return "text/plain".to_string();
+//     }
+
+//     fn build_widget(&self, sender: FactorySender<Tab>) -> gtk::Widget {
+//         let view = gtk::TextView::builder().buffer(&self.buffer).build();
+
+//         self.buffer.connect_changed(move |buffer| {
+//             let text = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false);
+//             sender.input(TabInputMsg::ContentChanged(text));
+//         });
+
+//         let sw = gtk::ScrolledWindow::builder()
+//             .child(&view)
+//             .vexpand(true)
+//             .hexpand(true)
+//             .build()
+//             .upcast::<Widget>();
+//         return sw;
+//     }
+// }
+
+pub trait EditorPlugin: std::fmt::Debug {
+    // fn build() -> Box<Self>;
+    fn content_type(&self) -> String;
+    fn build_widget(&self) -> Option<gtk::Widget>;
 }
 
 #[derive(Debug)]
-pub struct TextEditor {
-    buffer: gtk::TextBuffer,
-}
+pub struct TextEditorPlugin {}
 
-impl TextEditor {
-    fn new() -> Self {
-        return Self {
-            buffer: gtk::TextBuffer::new(None),
-        };
+impl TextEditorPlugin {
+    pub fn new() -> Self {
+        return Self {};
     }
 }
 
-impl Editor for TextEditor {
+impl EditorPlugin for TextEditorPlugin {
+    // fn build() -> Box<Self> {
+    //     return Box::new(Self {});
+    // }
+
     fn content_type(&self) -> String {
         return "text/plain".to_string();
     }
 
-    fn build_widget(&self, sender: FactorySender<Tab>) -> gtk::Widget {
-        let view = gtk::TextView::builder().buffer(&self.buffer).build();
-
-        self.buffer.connect_changed(move |buffer| {
-            let text = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false);
-            sender.input(TabInputMsg::ContentChanged(text));
-        });
-
-        let sw = gtk::ScrolledWindow::builder()
-            .child(&view)
-            .vexpand(true)
-            .hexpand(true)
-            .build()
-            .upcast::<Widget>();
-        return sw;
+    fn build_widget(&self) -> Option<gtk::Widget> {
+        return None;
     }
 }
