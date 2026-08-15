@@ -1,7 +1,6 @@
-pub mod node;
 pub mod gnode;
+pub mod node;
 pub mod tree;
-
 
 use tracing::debug;
 
@@ -16,25 +15,23 @@ use relm4::{
     ComponentParts,
     ComponentSender,
     SimpleComponent,
-    actions::{AccelsPlus, RelmAction, RelmActionGroup},
+    // actions::{AccelsPlus, RelmAction, RelmActionGroup},
     // gtk,
     prelude::*,
 };
 
+use crate::app::components::data_source_view::tree::DataSourceTree;
+use crate::app::windows::main::MainWindowMsg;
 use crate::app::{
     actions::DataSourceAddPostgresAction,
     // components::data_store_tree::DataStoreTree,
     // components::data_source_view::tree::DataSourceTree,
 };
-use crate::app::windows::main::MainWindowMsg;
-use crate::app::components::data_source_view::tree::DataSourceTree;
-
 
 #[derive(Debug)]
 pub enum DataSourceViewInputMsg {
     NewDataSource,
 }
-
 
 #[derive(Debug)]
 pub struct DataSourceView {
@@ -104,14 +101,11 @@ impl SimpleComponent for DataSourceView {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-
         let dst = DataSourceTree::builder()
             .launch(())
             .forward(sender.input_sender(), identity);
 
-        let model = Self {
-            tree: dst,
-        };
+        let model = Self { tree: dst };
         let widgets = view_output!();
 
         return ComponentParts { model, widgets };

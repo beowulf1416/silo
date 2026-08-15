@@ -45,7 +45,7 @@ impl App {
         let resource = gio::Resource::from_data(&resource_bytes).unwrap();
         gio::resources_register(&resource);
 
-        gtk::Window::set_default_icon_name(APP_ID);
+        gtk::Window::set_default_icon_name("org.devphilplus.silo");
 
         let gtk_app = main_application();
 

@@ -22,6 +22,7 @@ use relm4::{
 };
 
 use crate::app::components::data_source_view::DataSourceView;
+use crate::app::components::editor_view::EditorView;
 // use crate::app::components::data_source_dialog::DataSourceDialog;
 
 use crate::app::actions::*;
@@ -39,6 +40,7 @@ pub struct MainWindow {
     silo: silo_base::Silo,
     window: adw::ApplicationWindow,
     dsv: Controller<DataSourceView>,
+    ed: Controller<EditorView>,
 }
 
 #[relm4::component(pub)]
@@ -115,16 +117,24 @@ impl SimpleComponent for MainWindow {
                 gtk::Paned {
                     set_orientation: gtk::Orientation::Horizontal,
                     add_css_class: "paned",
+                    set_hexpand: true,
                     set_vexpand: true,
+                    set_width_request: 200,
+                    set_resize_start_child: false,
+                    set_shrink_start_child: false,
 
                     #[wrap(Some)]
                     set_start_child = &gtk::Box {
+                        set_hexpand: true,
+                        set_vexpand: true,
                         append = model.dsv.widget(),
                     },
 
                     #[wrap(Some)]
-                    set_end_child = &gtk::Label {
-                        set_label: "right",
+                    set_end_child = &gtk::Box {
+                        set_hexpand: true,
+                        set_vexpand: true,
+                        append = model.ed.widget(),
                     },
                 }
             }
@@ -141,10 +151,15 @@ impl SimpleComponent for MainWindow {
             .launch(())
             .forward(sender.input_sender(), identity);
 
+        let ed = EditorView::builder()
+            .launch(())
+            .forward(sender.input_sender(), identity);
+
         let model = Self {
             silo: init,
             window: root.clone(),
             dsv: dsv,
+            ed: ed,
         };
         let widgets = view_output!();
 
