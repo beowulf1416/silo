@@ -1,0 +1,21 @@
+[package]
+name = "ui-gtk"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tracing = "*"
+tracing-subscriber = "*"
+
+
+gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
+async-channel = "*"
+
+# projects
+silo-base = { path = "../silo-base" }
+silo-plugin = { path = "../silo-plugin" }
+
+
+[build-dependencies]
+gio = "*"
+glib-build-tools = "*"
