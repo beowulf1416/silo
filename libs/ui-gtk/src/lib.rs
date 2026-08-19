@@ -1,5 +1,7 @@
+mod actions;
 mod app;
 mod components;
+mod plugins;
 
 pub use app::App;
 

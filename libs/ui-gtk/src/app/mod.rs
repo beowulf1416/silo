@@ -36,18 +36,7 @@ impl App {
             // .property("workspace_path")
             .build();
 
-        // app.connect_startup(|_app| {
-        //     let display = gdk::Display::default().unwrap();
-        //     let theme = gtk::IconTheme::for_display(&display);
-        //     theme.add_resource_path("/org/devphilplus/silo/images");
-        // });
-
-        // debug!("{:?}", Self.imp());
-
         return app;
-        //     .downcast::<Self>()
-        //     .expect("App must be an instance of imp::App");
-        // app.run();
     }
 }
 

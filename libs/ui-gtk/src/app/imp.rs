@@ -1,4 +1,7 @@
+use tracing::debug;
+
 use std::cell::OnceCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use gtk::{gdk, glib, prelude::*, subclass::prelude::*};
@@ -6,14 +9,27 @@ use gtk::{gdk, glib, prelude::*, subclass::prelude::*};
 use crate::components::main_window::MainWindow;
 use silo_base::Silo;
 
+use crate::plugins::PluginRegistry;
+// type PluginFactory = fn() -> Box<dyn Plugin>;
+
 #[derive(Debug, Default, glib::Properties)]
 #[properties(wrapper_type = super::App)]
 pub struct App {
     // #[property(get, set, construct_only)]
     // pub silo: OnceCell<Rc<Silo>>,
+    pub registry: PluginRegistry,
 }
 
-impl App {}
+impl App {
+    pub fn new() -> Self {
+        debug!("App::new()");
+
+        let mut registry = PluginRegistry::new();
+        registry.register("postgres", crate::plugins::postgres::factory);
+
+        return Self { registry };
+    }
+}
 
 #[glib::object_subclass]
 impl ObjectSubclass for App {
@@ -36,10 +52,6 @@ impl ApplicationImpl for App {
             window.upcast()
         };
 
-        // let mw = MainWindow::new(&*self.obj());
-
-        // mw.present();
-        //
         window.present();
     }
 
