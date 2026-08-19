@@ -12,4 +12,5 @@ gtk = { version = "*", package = "gtk4", features = ["v4_6"] }
 
 # projects
 silo-base = { path = "../libs/silo-base" }
-ui-relm = { path = "../libs/ui-relm" }
+#ui-relm = { path = "../libs/ui-relm" }
+ui-gtk = { path = "../libs/ui-gtk" }
