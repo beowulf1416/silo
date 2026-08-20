@@ -1,6 +1,6 @@
 use tracing::debug;
 
-use std::cell::OnceCell;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -17,18 +17,20 @@ use crate::plugins::PluginRegistry;
 pub struct App {
     // #[property(get, set, construct_only)]
     // pub silo: OnceCell<Rc<Silo>>,
-    pub registry: PluginRegistry,
+    pub registry: RefCell<Option<PluginRegistry>>,
 }
 
 impl App {
-    pub fn new() -> Self {
-        debug!("App::new()");
+    // pub fn new() -> Self {
+    //     debug!("imp::App::new()");
 
-        let mut registry = PluginRegistry::new();
-        registry.register("postgres", crate::plugins::postgres::factory);
+    //     let mut registry = PluginRegistry::new();
+    //     registry.register("postgres", crate::plugins::postgres::factory);
 
-        return Self { registry };
-    }
+    //     return Self {
+    //         registry: RefCell::new(Some(registry)),
+    //     };
+    // }
 }
 
 #[glib::object_subclass]

@@ -27,9 +27,30 @@ glib::wrapper! {
 // #[gtk::template_callbacks]
 impl MainWindow {
     pub fn new(application: &App) -> Self {
-        glib::Object::builder()
+        debug!("MainWindow::new");
+
+        let window: Self = glib::Object::builder()
             .property("application", application)
-            .build()
+            .build();
+
+        window.set_app(&application);
+
+        return window;
+    }
+
+    pub fn set_app(&self, app: &App) {
+        let imp = self.imp();
+        imp.app.replace(Some(app.clone()));
+    }
+
+    fn app(&self) -> App {
+        let imp = self.imp();
+        return imp
+            .app
+            .borrow()
+            .as_ref()
+            .expect("expecting App struct")
+            .clone();
     }
 
     pub fn start_receiver(&self, receiver: Receiver<MainWindowInputMessage>) {
@@ -57,6 +78,10 @@ impl MainWindow {
                     "process message: new data source requested: {}",
                     plugin_name
                 );
+
+                if let Some(plugin) = self.app().registry().create_plugin(&plugin_name) {
+                    debug!("plugin {:?}", plugin);
+                }
             }
         }
     }

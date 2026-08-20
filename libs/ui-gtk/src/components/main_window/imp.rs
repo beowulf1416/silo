@@ -16,6 +16,7 @@ use gtk::{
 use super::MainWindowInputMessage;
 use crate::{
     APP_TITLE,
+    app::App,
     components::data_source_view::DataSourceView,
     plugins::{PluginRegistry, postgres::PostgresPlugin},
 };
@@ -38,7 +39,8 @@ pub struct MainWindow {
     pub ev: EditorView,
 
     // pub plugins: HashMap<String, Box<dyn Plugin>>,
-    pub registry: Rc<PluginRegistry>,
+    // pub registry: Rc<PluginRegistry>,
+    pub app: RefCell<Option<App>>,
 }
 
 impl MainWindow {
@@ -110,7 +112,7 @@ impl ObjectImpl for MainWindow {
 
         // register plugins
         // let r = obj.application();
-        debug!("plugins {:?}", obj.application());
+        // debug!("plugins {:?}", obj.application());
 
         let (sender, receiver) = async_channel::unbounded::<MainWindowInputMessage>();
         *self.sender.borrow_mut() = Some(sender);

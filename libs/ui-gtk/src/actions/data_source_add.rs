@@ -5,16 +5,6 @@ use gtk::{gio, glib, prelude::*};
 use crate::components::main_window::{MainWindow, MainWindowInputMessage};
 
 pub fn data_source_add_action(window: &MainWindow) -> gio::SimpleAction {
-    // let action = gio::SimpleAction::new("data-source-add", None);
-    // action.connect_activate(glib::clone!(
-    //     #[weak]
-    //     window,
-    //     move |a, b| {
-    //         debug!("data-source-add action activated");
-    //         // window.send(MainWindowInputMessage::CloseRequested);
-    //     }
-    // ));
-
     let action = gio::SimpleAction::new_stateful(
         "data-source-add",
         Some(glib::VariantTy::STRING),
@@ -29,14 +19,16 @@ pub fn data_source_add_action(window: &MainWindow) -> gio::SimpleAction {
             if let Some(value) = parameter {
                 if let Some(plugin_name) = value.get::<String>() {
                     debug!("parameter {}", plugin_name);
+
+                    window.send(MainWindowInputMessage::NewDataSourceRequest(plugin_name));
                 }
             }
 
-            let state: String = action
-                .state()
-                .and_then(|v| v.get())
-                .unwrap_or("text".to_string());
-            debug!("state {:?}", state);
+            // let state: String = action
+            //     .state()
+            //     .and_then(|v| v.get())
+            //     .unwrap_or("text".to_string());
+            // debug!("state {:?}", state);
         }
     ));
 

@@ -1,4 +1,5 @@
 pub mod postgres;
+pub mod text;
 
 use std::collections::HashMap;
 
@@ -9,7 +10,7 @@ pub trait Plugin: std::fmt::Debug {
 
 type PluginFactory = fn() -> Box<dyn Plugin>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PluginRegistry {
     plugins: HashMap<String, PluginFactory>,
 }

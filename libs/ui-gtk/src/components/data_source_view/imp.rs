@@ -1,7 +1,7 @@
 use tracing::{debug, error};
 
 use async_channel::Sender;
-use std::cell::Ref;
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
@@ -10,13 +10,13 @@ use crate::plugins::PluginRegistry;
 
 #[derive(Debug, Default)]
 pub struct DataSourceView {
-    pub registry: Rc<PluginRegistry>,
+    pub registry: RefCell<Option<PluginRegistry>>,
 }
 
 impl DataSourceView {
-    pub fn set_plugin_registry(&mut self, registry: Rc<PluginRegistry>) {
-        self.registry = registry;
-    }
+    // pub fn set_plugin_registry(&mut self, registry: Rc<PluginRegistry>) {
+    //     self.registry = registry;
+    // }
 }
 
 #[glib::object_subclass]
@@ -28,6 +28,8 @@ impl ObjectSubclass for DataSourceView {
 
 impl ObjectImpl for DataSourceView {
     fn constructed(&self) {
+        debug!("DataSourceView::constructed");
+
         self.parent_constructed();
         let obj = self.obj();
 
@@ -35,24 +37,18 @@ impl ObjectImpl for DataSourceView {
 
         let menu_item =
             gio::MenuItem::new(Some("PostgreSQL"), Some("win.data-source-add::postgres"));
-        // menu_item.set_action_and_target_value(
-        //     Some("win.data-source-add"),
-        //     Some(&"postgres".to_variant()),
-        // );
         menu_ds.append_item(&menu_item);
 
         let menu_item = gio::MenuItem::new(Some("MSSQL"), Some("win.data-source-add::mssql"));
-        // menu_item
-        //     .set_action_and_target_value(Some("win.data-source-add"), Some(&"mssql".to_variant()));
         menu_ds.append_item(&menu_item);
 
-        // self.registry.registered_plugins().iter().for_each(|item| {
-        //     let menu_item = gio::MenuItem::new(Some(item), Some("win.data-source-add"));
-        //     menu_item
-        //         .set_action_and_target_value(Some("win.data-source-add"), Some(&item.to_variant()));
-
-        //     menu_ds.append_item(&menu_item);
-        // });
+        // todo: empty at this point
+        // debug!("registry {:?}", self.registry);
+        // if let Some(registry) = self.registry.borrow().as_ref() {
+        //     registry.registered_plugins().iter().for_each(|item| {
+        //         debug!("item {:?}", item);
+        //     });
+        // }
 
         let top_box = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
