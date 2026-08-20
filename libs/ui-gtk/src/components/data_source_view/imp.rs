@@ -33,14 +33,24 @@ impl ObjectImpl for DataSourceView {
         self.parent_constructed();
         let obj = self.obj();
 
+        obj.set_hexpand(true);
+        obj.set_vexpand(true);
+
         let menu_ds = gio::Menu::new();
+
+        let menu_item = gio::MenuItem::new(Some("Text"), Some("win.data-source-add::text"));
+        menu_ds.append_item(&menu_item);
+
+        let menu_section = gio::Menu::new();
 
         let menu_item =
             gio::MenuItem::new(Some("PostgreSQL"), Some("win.data-source-add::postgres"));
-        menu_ds.append_item(&menu_item);
+        menu_section.append_item(&menu_item);
 
         let menu_item = gio::MenuItem::new(Some("MSSQL"), Some("win.data-source-add::mssql"));
-        menu_ds.append_item(&menu_item);
+        menu_section.append_item(&menu_item);
+
+        menu_ds.insert_section(1, None, &menu_section);
 
         // todo: empty at this point
         // debug!("registry {:?}", self.registry);
@@ -92,9 +102,14 @@ impl ObjectImpl for DataSourceView {
         action_bar.pack_start(&btn_remove);
         top_box.append(&action_bar);
 
-        // let sw = gtk::ScrolledWindow
+        let sw = gtk::ScrolledWindow::builder()
+            .hexpand(true)
+            .vexpand(true)
+            .has_frame(true)
+            .build();
 
         obj.append(&top_box);
+        obj.append(&sw);
     }
 }
 

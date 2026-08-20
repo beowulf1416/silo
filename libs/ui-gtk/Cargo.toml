@@ -10,6 +10,7 @@ tracing-subscriber = "*"
 
 gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
 async-channel = "*"
+sourceview5 = "*"
 
 # projects
 silo-base = { path = "../silo-base" }

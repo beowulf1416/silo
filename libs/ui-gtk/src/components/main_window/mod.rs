@@ -2,7 +2,7 @@ mod imp;
 
 use async_channel::Receiver;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
-use tracing::debug;
+use tracing::{debug, error};
 
 use crate::App;
 use crate::plugins::Plugin;
@@ -81,6 +81,11 @@ impl MainWindow {
 
                 if let Some(plugin) = self.app().registry().create_plugin(&plugin_name) {
                     debug!("plugin {:?}", plugin);
+
+                    let imp = self.imp();
+                    imp.ev.add_editor(plugin);
+                } else {
+                    error!("unable to find plugin {}", plugin_name);
                 }
             }
         }

@@ -5,13 +5,54 @@ use std::cell::Ref;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
+use crate::plugins::Plugin;
+
 #[derive(Debug, Default)]
 pub struct EditorView {
     pub nb: gtk::Notebook,
 }
 
 impl EditorView {
-    pub fn add_editor(&self, widget: gtk::Widget) {}
+    pub fn add_editor(&self, plugin: Box<dyn Plugin>) {
+        // tab header
+        let icon = gtk::Image::builder()
+            .icon_name("folder-visiting-symbolic")
+            .build();
+
+        let label = gtk::Label::builder().label(plugin.name()).build();
+
+        let btn_close = gtk::Button::builder()
+            .tooltip_text("close")
+            .icon_name("window-close-symbolic")
+            .css_classes(vec!["btn", "flat"])
+            .build();
+        btn_close.connect_clicked(|_button| {
+            debug!("close window requested");
+        });
+
+        let th = gtk::Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .spacing(5)
+            .build();
+        th.append(&icon);
+        th.append(&label);
+        th.append(&btn_close);
+
+        // content
+        let widget = plugin.build_widget();
+
+        let content = gtk::Box::builder()
+            .hexpand(true)
+            .vexpand(true)
+            .margin_bottom(2)
+            .margin_top(2)
+            .margin_start(2)
+            .margin_end(2)
+            .build();
+        content.append(&widget);
+
+        self.nb.append_page(&content, Some(&th));
+    }
 }
 
 #[glib::object_subclass]
