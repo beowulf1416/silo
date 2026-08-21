@@ -18,7 +18,7 @@ use crate::{
     APP_TITLE,
     app::App,
     components::data_source_view::DataSourceView,
-    plugins::{PluginRegistry, postgres::PostgresPlugin},
+    plugins::{PluginRegistry, postgres::postgres_plugin::PostgresPlugin},
 };
 use crate::{
     components::{editor_view::EditorView, header::Header},
@@ -44,20 +44,36 @@ pub struct MainWindow {
 }
 
 impl MainWindow {
+    // fn app(&self) -> App {
+    //     return self.app;
+    // }
+
+    // pub fn set_workspace_path(&self, new_path: String) {
+    //     self.app
+    //         .borrow()
+    //         .expect("App struct expected")
+    //         .set_workspace_path(new_path);
+    // }
+
     fn add_actions(&self) {
         let obj = self.obj().clone();
 
         // let action_group = gio::SimpleActionGroup::new();
 
-        let quit_action = crate::actions::quit::quit_action(&obj);
-        obj.add_action(&quit_action);
+        // let quit_action = crate::actions::quit::quit_action(&obj);
+        // obj.add_action(&quit_action);
 
-        let data_source_add_action = crate::actions::data_source_add::data_source_add_action(&obj);
-        obj.add_action(&data_source_add_action);
+        // let data_source_add_action = crate::actions::data_source_add::data_source_add_action(&obj);
+        // obj.add_action(&data_source_add_action);
 
-        let data_source_remove_action =
-            crate::actions::data_source_remove::data_source_remove_action(&obj);
-        obj.add_action(&data_source_remove_action);
+        // let data_source_remove_action =
+        //     crate::actions::data_source_remove::data_source_remove_action(&obj);
+        // obj.add_action(&data_source_remove_action);
+
+        // let action = crate::actions::workspace_open_action::workspace_open_action(&obj);
+        // obj.add_action(&action);
+
+        crate::actions::setup_actions(&obj);
     }
 
     fn setup_action_handlers(&self) {
@@ -69,12 +85,12 @@ impl MainWindow {
         // self.connect_close_request
     }
 
-    pub fn send(&self, msg: MainWindowInputMessage) {
-        debug!("send (imp)");
-        if let Some(sender) = self.sender.borrow().as_ref() {
-            let _ = sender.send_blocking(msg);
-        }
-    }
+    // pub fn send(&self, msg: MainWindowInputMessage) {
+    //     debug!("send (imp)");
+    //     if let Some(sender) = self.sender.borrow().as_ref() {
+    //         let _ = sender.send_blocking(msg);
+    //     }
+    // }
 }
 
 // impl Default for MainWindow {
@@ -163,7 +179,8 @@ impl WindowImpl for MainWindow {
     fn close_request(&self) -> glib::Propagation {
         debug!("MainWindow::close_request");
 
-        self.send(MainWindowInputMessage::CloseRequested);
+        let obj = self.obj();
+        obj.send(MainWindowInputMessage::CloseRequested);
 
         return glib::Propagation::Proceed;
     }

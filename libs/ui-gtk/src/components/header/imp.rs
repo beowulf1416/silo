@@ -1,7 +1,7 @@
 use tracing::{debug, error};
 
-use async_channel::Sender;
-use std::cell::Ref;
+// use async_channel::Sender;
+// use std::cell::Ref;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
@@ -19,6 +19,30 @@ pub struct Header {
     // pub title_label: gtk::Label,
     pub btn_menu: gtk::MenuButton,
     pub btn_settings: gtk::Button,
+}
+
+impl Header {
+    fn build_main_menu(&self) -> gio::Menu {
+        let menu = gio::Menu::new();
+        menu.append(Some("_File"), None);
+
+        let section = gio::Menu::new();
+
+        let item = gio::MenuItem::new(Some("Open ..."), Some("win.workspace-open"));
+        section.append_item(&item);
+
+        let item = gio::MenuItem::new(Some("Save"), Some("win.workspace-save"));
+        section.append_item(&item);
+
+        menu.append_section(Some("Workspace"), &section);
+
+        let section = gio::Menu::new();
+        let item = gio::MenuItem::new(Some("_Quit"), Some("win.quit"));
+        section.append_item(&item);
+        menu.append_section(None, &section);
+
+        return menu;
+    }
 }
 
 #[glib::object_subclass]
@@ -55,21 +79,27 @@ impl ObjectImpl for Header {
 
         self.header_bar.set_title_widget(Some(&title_box));
 
-        let menu_main = gio::Menu::new();
-        menu_main.append(Some("_File"), None);
+        // let menu_main = gio::Menu::new();
+        // menu_main.append(Some("_File"), None);
 
-        let sub_menu_workspace = gio::Menu::new();
-        sub_menu_workspace.append(Some("Open"), Some("win.workspace-open"));
-        menu_main.append_submenu(Some("Workspace"), &sub_menu_workspace);
+        // // let sub_menu_workspace = gio::Menu::new();
+        // // sub_menu_workspace.append(Some("Open"), Some("win.workspace-open"));
+        // // menu_main.append_submenu(Some("Workspace"), &sub_menu_workspace);
 
-        let menu_section = gio::Menu::new();
+        // let menu_section = gio::Menu::new();
+        // let item = gio::MenuItem::new(Some("Open workspace..."), Some("win.workspace-open"));
+        // menu_section.append_item(&item);
 
-        let menu_item = gio::MenuItem::new(Some("_Quit"), Some("win.quit"));
-        menu_section.append_item(&menu_item);
+        // let menu_section = gio::Menu::new();
 
-        menu_main.insert_section(2, None, &menu_section);
+        // let menu_item = gio::MenuItem::new(Some("_Quit"), Some("win.quit"));
+        // menu_section.append_item(&menu_item);
 
-        let pop_menu = gtk::PopoverMenu::from_model(Some(&menu_main));
+        // menu_main.insert_section(2, None, &menu_section);
+        //
+        let menu = self.build_main_menu();
+
+        let pop_menu = gtk::PopoverMenu::from_model(Some(&menu));
 
         // menu button
         self.btn_menu.set_icon_name("open-menu-symbolic");

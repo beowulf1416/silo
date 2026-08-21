@@ -13,7 +13,7 @@ pub fn data_source_add_action(window: &MainWindow) -> gio::SimpleAction {
     action.connect_activate(glib::clone!(
         #[weak]
         window,
-        move |action, parameter| {
+        move |_action, parameter| {
             debug!("data-source-add action activated");
 
             if let Some(value) = parameter {

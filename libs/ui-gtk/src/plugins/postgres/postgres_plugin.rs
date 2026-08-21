@@ -3,7 +3,15 @@ use tracing::debug;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use sourceview5::{Buffer, LanguageManager, StyleSchemeManager, View, prelude::*};
 
-use super::Plugin;
+use serde_json::{Value, json};
+
+use crate::{
+    components::main_window::{MainWindow, MainWindowInputMessage},
+    plugins::postgres::PostgresConnectionEditor,
+};
+
+// use super::Plugin;
+use crate::plugins::Plugin;
 
 pub const PLUGIN_NAME: &str = "postgres";
 
@@ -13,6 +21,7 @@ pub fn factory() -> Box<dyn Plugin> {
 
 #[derive(Debug)]
 pub struct PostgresPlugin {
+    pub entry_name: gtk::Entry,
     pub entry_db: gtk::Entry,
     pub entry_host: gtk::Entry,
     pub entry_port: gtk::SpinButton,
@@ -23,6 +32,8 @@ pub struct PostgresPlugin {
 
 impl PostgresPlugin {
     pub fn new() -> Self {
+        let entry_name = gtk::Entry::builder().placeholder_text("Name").build();
+
         let entry_db = gtk::Entry::builder()
             .tooltip_text("Database Name")
             .placeholder_text("Database")
@@ -86,6 +97,7 @@ impl PostgresPlugin {
         entry_db.connect_changed(move |_| update_uri_4());
 
         return Self {
+            entry_name: entry_name,
             entry_db: entry_db,
             entry_host: entry_host,
             entry_port: entry_port,
@@ -95,15 +107,26 @@ impl PostgresPlugin {
         };
     }
 
-    // pub fn update_uri(&self) {
-    //     let user = self.entry_user.text();
-    //     let host = self.entry_host.text();
-    //     let db = self.entry_db.text();
-    //     let port = self.entry_port.text();
+    pub fn get_configuration(&self) -> Value {
+        let name = self.entry_name.text().to_string();
+        let db = self.entry_db.text().to_string();
+        let host = self.entry_host.text().to_string();
+        let port = self.entry_port.text().to_string();
+        let user = self.entry_user.text().to_string();
+        let pw = self.entry_pw.text().to_string();
 
-    //     let uri = format!("postgresql://{user}:[password]@{host}:{port}/{db}");
-    //     self.entry_uri.set_text(uri.as_str());
-    // }
+        let config = json!({
+            "type": "postgres",
+            "name": name,
+            "db": db,
+            "host": host,
+            "port": port,
+            "user": user,
+            "pw": pw
+        });
+
+        return config;
+    }
 }
 
 impl Plugin for PostgresPlugin {
@@ -111,60 +134,74 @@ impl Plugin for PostgresPlugin {
         return PLUGIN_NAME;
     }
 
-    fn build_widget(&self) -> gtk::Widget {
-        let btn_save = gtk::Button::builder()
-            .icon_name("document-save-symbolic")
-            .tooltip_text("Save")
-            .build();
+    // fn build_widget(&self) -> gtk::Widget {
+    //     let btn_save = gtk::Button::builder()
+    //         .icon_name("document-save-symbolic")
+    //         .tooltip_text("Save")
+    //         .build();
 
-        let bar = gtk::ActionBar::builder().hexpand(true).build();
-        bar.pack_start(&btn_save);
+    //     let bar = gtk::ActionBar::builder().hexpand(true).build();
+    //     bar.pack_start(&btn_save);
 
-        let buffer = Buffer::new(None);
-        let lm = LanguageManager::default();
-        if let Some(l) = lm.language("postgresql") {
-            buffer.set_language(Some(&l));
-        }
+    //     let buffer = Buffer::new(None);
+    //     let lm = LanguageManager::default();
+    //     if let Some(l) = lm.language("postgresql") {
+    //         buffer.set_language(Some(&l));
+    //     }
 
-        let sm = StyleSchemeManager::default();
-        if let Some(s) = sm.scheme("classic") {
-            buffer.set_style_scheme(Some(&s));
-        }
+    //     let sm = StyleSchemeManager::default();
+    //     if let Some(s) = sm.scheme("classic") {
+    //         buffer.set_style_scheme(Some(&s));
+    //     }
 
-        let sv = View::with_buffer(&buffer);
-        sv.set_show_line_numbers(true);
-        sv.set_highlight_current_line(true);
-        sv.set_monospace(true);
-        sv.set_tab_width(4);
+    //     let sv = View::with_buffer(&buffer);
+    //     sv.set_show_line_numbers(true);
+    //     sv.set_highlight_current_line(true);
+    //     sv.set_monospace(true);
+    //     sv.set_tab_width(4);
 
-        let sw = gtk::ScrolledWindow::builder()
-            .hexpand(true)
-            .vexpand(true)
-            .has_frame(true)
-            .child(&sv)
-            .build();
+    //     let sw = gtk::ScrolledWindow::builder()
+    //         .hexpand(true)
+    //         .vexpand(true)
+    //         .has_frame(true)
+    //         .child(&sv)
+    //         .build();
 
-        let container = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .hexpand(true)
-            .vexpand(true)
-            .build();
-        container.append(&bar);
-        container.append(&sw);
+    //     let container = gtk::Box::builder()
+    //         .orientation(gtk::Orientation::Vertical)
+    //         .hexpand(true)
+    //         .vexpand(true)
+    //         .build();
+    //     container.append(&bar);
+    //     container.append(&sw);
 
-        return container.upcast::<gtk::Widget>();
+    //     return container.upcast::<gtk::Widget>();
+    // }
+
+    fn build_data_source_editor_widget(&self, window: &MainWindow) -> Option<gtk::Widget> {
+        let editor = PostgresConnectionEditor::default();
+        return Some(editor.upcast());
     }
 
-    fn build_data_source_editor_widget(&self) -> Option<gtk::Widget> {
+    /*
+    fn build_data_source_editor_widget(&self, window: &MainWindow) -> Option<gtk::Widget> {
         let btn_save = gtk::Button::builder()
             // .icon_name("document-save-symbolic")
             .icon_name("save")
             .tooltip_text("Save")
             // .child(&icon_save)
             .build();
-        btn_save.connect_clicked(|_button| {
-            debug!("//todo save button clicked");
-        });
+
+        // let cloned = self.clone();
+        // btn_save.connect_clicked(glib::clone!(
+        //     #[weak(rename_to = plugin)]
+        //     self,
+        //     move |_button| {
+        //         debug!("//todo save button clicked");
+
+        //         // let config = plugin.get_configuration();
+        //     }
+        // ));
 
         let btn_test = gtk::Button::builder()
             // .icon_name("system-run-symbolic")
@@ -191,10 +228,8 @@ impl Plugin for PostgresPlugin {
             .halign(gtk::Align::End)
             .build();
 
-        let entry_name = gtk::Entry::builder().placeholder_text("Name").build();
-
         grid.attach(&label_name, 0, 0, 1, 1);
-        grid.attach(&entry_name, 1, 0, 1, 1);
+        grid.attach(&self.entry_name, 1, 0, 1, 1);
 
         // row 1
         let label_db = gtk::Label::builder()
@@ -264,4 +299,5 @@ impl Plugin for PostgresPlugin {
 
         return Some(container.upcast::<gtk::Widget>());
     }
+    */
 }

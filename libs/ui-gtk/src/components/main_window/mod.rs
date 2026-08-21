@@ -4,16 +4,21 @@ use async_channel::Receiver;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use tracing::{debug, error, warn};
 
+use serde_json::Value;
+
 use crate::App;
 use crate::plugins::Plugin;
 
-type PluginFactory = fn() -> Box<dyn Plugin>;
+// type PluginFactory = fn() -> Box<dyn Plugin>;
 type PluginName = String;
+type WorkspacePath = String;
 
 #[derive(Debug, Clone)]
 pub enum MainWindowInputMessage {
     CloseRequested,
+    WorkspaceChanged(WorkspacePath),
     NewDataSourceRequest(PluginName),
+    DataSourceAdd(Value),
 }
 
 glib::wrapper! {
@@ -73,6 +78,16 @@ impl MainWindow {
                     app.quit();
                 }
             }
+            MainWindowInputMessage::WorkspaceChanged(workspace_path) => {
+                debug!("workspace changed {}", workspace_path);
+
+                // let imp = self.imp();
+                // imp.app
+                //     .borrow()
+                //     .expect("App expected")
+                //     .set_workspace_path(workspace_path);
+                self.set_workspace_path(&workspace_path);
+            }
             MainWindowInputMessage::NewDataSourceRequest(plugin_name) => {
                 debug!(
                     "process message: new data source requested: {}",
@@ -82,7 +97,7 @@ impl MainWindow {
                 if let Some(plugin) = self.app().registry().create_plugin(&plugin_name) {
                     debug!("plugin {:?}", plugin);
 
-                    if let Some(widget) = plugin.build_data_source_editor_widget() {
+                    if let Some(widget) = plugin.build_data_source_editor_widget(&self) {
                         let imp = self.imp();
                         imp.ev.add_editor(&plugin_name, widget);
                     } else {
@@ -92,6 +107,12 @@ impl MainWindow {
                     error!("unable to find plugin {}", plugin_name);
                 }
             }
+            MainWindowInputMessage::DataSourceAdd(config) => {
+                debug!("DataSourceAdd {:?}", config);
+
+                let imp = self.imp();
+                imp.dsv.data_source_add();
+            }
         }
     }
 
@@ -100,5 +121,9 @@ impl MainWindow {
         if let Some(sender) = self.imp().sender.borrow().as_ref() {
             let _ = sender.send_blocking(msg);
         }
+    }
+
+    fn set_workspace_path(&self, path: &String) {
+        debug!("set_workspace_path {}", path);
     }
 }

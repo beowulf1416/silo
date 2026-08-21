@@ -12,25 +12,27 @@ use silo_base::Silo;
 use crate::plugins::PluginRegistry;
 // type PluginFactory = fn() -> Box<dyn Plugin>;
 
-#[derive(Debug, Default, glib::Properties)]
-#[properties(wrapper_type = super::App)]
+// #[derive(Debug, Default, glib::Properties)]
+// #[properties(wrapper_type = super::App)]
+#[derive(Debug, Default)]
 pub struct App {
     // #[property(get, set, construct_only)]
-    // pub silo: OnceCell<Rc<Silo>>,
+    // pub workspace_path: OnceCell<String>, // #[property(get, set, construct_only)]
+    // pub silo: RefCell<Silo>,
     pub registry: RefCell<Option<PluginRegistry>>,
+    pub workspace_path: RefCell<Option<String>>,
 }
 
 impl App {
-    // pub fn new() -> Self {
-    //     debug!("imp::App::new()");
-
-    //     let mut registry = PluginRegistry::new();
-    //     registry.register("postgres", crate::plugins::postgres::factory);
-
-    //     return Self {
-    //         registry: RefCell::new(Some(registry)),
-    //     };
+    // pub fn set_silo(&self, silo: Silo) {
+    //     self.silo.replace(silo);
     // }
+
+    pub fn set_workspace_path(&self, new_path: String) {
+        self.workspace_path.replace(Some(new_path));
+
+        // open connections file
+    }
 }
 
 #[glib::object_subclass]

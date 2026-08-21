@@ -1,5 +1,6 @@
 mod imp;
 
+use silo_base::Silo;
 use tracing::debug;
 
 use std::rc::Rc;
@@ -36,9 +37,12 @@ impl App {
             .property("application-id", APP_ID)
             .property("flags", gio::ApplicationFlags::FLAGS_NONE)
             // .property("workspace_path")
+            // .property("silo", silo)
             .build();
 
         app.initialize_registry();
+        // let imp = self.imp();
+        // imp.set_silo(silo);
 
         return app;
     }
@@ -57,12 +61,20 @@ impl App {
         debug!("init registry");
 
         let mut registry = PluginRegistry::new();
-        registry.register("postgres", crate::plugins::postgres::factory);
+        registry.register(
+            "postgres",
+            crate::plugins::postgres::postgres_plugin::factory,
+        );
 
         debug!("registry {:?}", registry);
 
         let imp = self.imp();
         imp.registry.replace(Some(registry));
+    }
+
+    pub fn set_workspace_path(&self, new_path: String) {
+        let imp = self.imp();
+        imp.set_workspace_path(new_path);
     }
 }
 

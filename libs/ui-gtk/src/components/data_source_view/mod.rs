@@ -19,8 +19,8 @@ impl DataSourceView {
 
         let window: Self = glib::Object::builder().build();
 
-        let registry = app.registry();
-        window.set_registry(&registry);
+        // let registry = app.registry();
+        // window.set_registry(&registry);
 
         return window;
     }
@@ -40,6 +40,10 @@ impl DataSourceView {
             .as_ref()
             .expect("expecting App struct")
             .clone();
+    }
+
+    pub fn data_source_add(&self) {
+        debug!("//todo data_source_add");
     }
 }
 

@@ -1,7 +1,10 @@
 pub mod postgres;
 pub mod text;
 
+use serde_json::Value;
 use std::collections::HashMap;
+
+use crate::components::main_window::MainWindow;
 
 type PluginName = String;
 
@@ -12,8 +15,8 @@ pub enum PluginMessage {
 
 pub trait Plugin: std::fmt::Debug {
     fn name(&self) -> &str;
-    fn build_widget(&self) -> gtk::Widget;
-    fn build_data_source_editor_widget(&self) -> Option<gtk::Widget>;
+    // fn build_widget(&self) -> gtk::Widget;
+    fn build_data_source_editor_widget(&self, window: &MainWindow) -> Option<gtk::Widget>;
 }
 
 type PluginFactory = fn() -> Box<dyn Plugin>;

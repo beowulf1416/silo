@@ -7,6 +7,7 @@ edition = "2024"
 tracing = "*"
 tracing-subscriber = "*"
 
+serde_json = "*"
 
 gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
 async-channel = "*"
