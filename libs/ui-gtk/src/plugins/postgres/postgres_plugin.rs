@@ -180,6 +180,7 @@ impl Plugin for PostgresPlugin {
 
     fn build_data_source_editor_widget(&self, window: &MainWindow) -> Option<gtk::Widget> {
         let editor = PostgresConnectionEditor::default();
+        editor.set_main_window(window);
         return Some(editor.upcast());
     }
 

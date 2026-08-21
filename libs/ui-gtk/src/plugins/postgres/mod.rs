@@ -5,6 +5,8 @@ use tracing::debug;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
+use crate::components::main_window::MainWindow;
+
 glib::wrapper! {
     pub struct PostgresConnectionEditor(ObjectSubclass<imp::PostgresConnectionEditor>)
         @extends gtk::Widget, gtk::Box,
@@ -15,6 +17,11 @@ glib::wrapper! {
 impl PostgresConnectionEditor {
     pub fn new() -> Self {
         glib::Object::builder().build()
+    }
+
+    pub fn set_main_window(&self, window: &MainWindow) {
+        let imp = self.imp();
+        imp.set_main_window(&window);
     }
 
     pub fn save_configuration(&self) {

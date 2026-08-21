@@ -1,9 +1,14 @@
 use tracing::{debug, error};
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
+use std::cell::RefCell;
+
+use crate::components::main_window::{MainWindow, MainWindowInputMessage};
 
 #[derive(Debug, Default)]
 pub struct PostgresConnectionEditor {
+    pub window: RefCell<Option<MainWindow>>,
+
     pub is_dirty: bool,
     pub is_value: bool,
 
@@ -20,6 +25,10 @@ pub struct PostgresConnectionEditor {
 }
 
 impl PostgresConnectionEditor {
+    pub fn set_main_window(&self, window: &MainWindow) {
+        self.window.replace(Some(window.clone()));
+    }
+
     pub fn set_is_dirty(&mut self, value: bool) {
         self.is_dirty = value;
         self.btn_save
@@ -117,12 +126,17 @@ impl ObjectImpl for PostgresConnectionEditor {
         self.btn_save.set_icon_name("save");
         self.btn_save.set_tooltip_text(Some("Save"));
         self.btn_save.connect_clicked(glib::clone!(
-            #[weak]
-            obj,
+            #[weak(rename_to = editor)]
+            self,
             move |_button| {
                 debug!("//todo save button clicked");
 
-                obj.save_configuration();
+                // obj.save_configuration();
+                if let Some(window) = editor.window.borrow().as_ref() {
+                    let _ = window.send(MainWindowInputMessage::DataSourceAdd(
+                        serde_json::json!({ "name": "test" }),
+                    ));
+                }
             }
         ));
 
