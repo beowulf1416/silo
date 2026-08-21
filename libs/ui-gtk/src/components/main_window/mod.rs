@@ -2,7 +2,7 @@ mod imp;
 
 use async_channel::Receiver;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
-use tracing::{debug, error};
+use tracing::{debug, error, warn};
 
 use crate::App;
 use crate::plugins::Plugin;
@@ -82,8 +82,12 @@ impl MainWindow {
                 if let Some(plugin) = self.app().registry().create_plugin(&plugin_name) {
                     debug!("plugin {:?}", plugin);
 
-                    let imp = self.imp();
-                    imp.ev.add_editor(plugin);
+                    if let Some(widget) = plugin.build_data_source_editor_widget() {
+                        let imp = self.imp();
+                        imp.ev.add_editor(&plugin_name, widget);
+                    } else {
+                        warn!("plugin {} does not have a data source editor", plugin_name);
+                    }
                 } else {
                     error!("unable to find plugin {}", plugin_name);
                 }

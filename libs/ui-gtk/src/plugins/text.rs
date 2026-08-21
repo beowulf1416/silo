@@ -43,4 +43,14 @@ impl Plugin for TextPlugin {
 
         return container.upcast::<gtk::Widget>();
     }
+
+    fn build_data_source_editor_widget(&self) -> Option<gtk::Widget> {
+        let container = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .hexpand(true)
+            .vexpand(true)
+            .build();
+
+        return Some(container.upcast::<gtk::Widget>());
+    }
 }

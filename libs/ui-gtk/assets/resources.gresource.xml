@@ -2,5 +2,7 @@
 <gresources>
     <gresource prefix="/org/devphilplus/silo/images">
         <file compressed="true" preprocess="xml-stripblanks">silo.svg</file>
+        <file compressed="true" preprocess="xml-stripblanks">save.svg</file>
+        <file compressed="true" preprocess="xml-stripblanks">connect.svg</file>
     </gresource>
 </gresources>

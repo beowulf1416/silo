@@ -3,9 +3,17 @@ pub mod text;
 
 use std::collections::HashMap;
 
+type PluginName = String;
+
+#[derive(Debug)]
+pub enum PluginMessage {
+    NewDataSourceRequested(PluginName),
+}
+
 pub trait Plugin: std::fmt::Debug {
     fn name(&self) -> &str;
     fn build_widget(&self) -> gtk::Widget;
+    fn build_data_source_editor_widget(&self) -> Option<gtk::Widget>;
 }
 
 type PluginFactory = fn() -> Box<dyn Plugin>;

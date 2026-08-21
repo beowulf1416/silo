@@ -16,7 +16,7 @@ pub enum HeaderInputMessage {
 #[derive(Debug, Default)]
 pub struct Header {
     pub header_bar: gtk::HeaderBar,
-    pub title_label: gtk::Label,
+    // pub title_label: gtk::Label,
     pub btn_menu: gtk::MenuButton,
     pub btn_settings: gtk::Button,
 }
@@ -38,14 +38,38 @@ impl ObjectImpl for Header {
         let obj = self.obj();
 
         // header
-        self.title_label.set_text(APP_TITLE);
-        self.title_label.set_hexpand(true);
-        self.header_bar.set_title_widget(Some(&self.title_label));
+        // self.title_label.set_text(APP_TITLE);
+        // self.title_label.set_hexpand(true);
+        // self.header_bar.set_title_widget(Some(&self.title_label));
 
-        let menu = gio::Menu::new();
-        menu.append(Some("_Quit"), Some("win.quit"));
+        let icon = gtk::Image::builder().icon_name("silo").build();
 
-        let pop_menu = gtk::PopoverMenu::from_model(Some(&menu));
+        let label = gtk::Label::builder().label(APP_TITLE).build();
+
+        let title_box = gtk::Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .spacing(12)
+            .build();
+        title_box.append(&icon);
+        title_box.append(&label);
+
+        self.header_bar.set_title_widget(Some(&title_box));
+
+        let menu_main = gio::Menu::new();
+        menu_main.append(Some("_File"), None);
+
+        let sub_menu_workspace = gio::Menu::new();
+        sub_menu_workspace.append(Some("Open"), Some("win.workspace-open"));
+        menu_main.append_submenu(Some("Workspace"), &sub_menu_workspace);
+
+        let menu_section = gio::Menu::new();
+
+        let menu_item = gio::MenuItem::new(Some("_Quit"), Some("win.quit"));
+        menu_section.append_item(&menu_item);
+
+        menu_main.insert_section(2, None, &menu_section);
+
+        let pop_menu = gtk::PopoverMenu::from_model(Some(&menu_main));
 
         // menu button
         self.btn_menu.set_icon_name("open-menu-symbolic");

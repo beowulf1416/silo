@@ -13,13 +13,13 @@ pub struct EditorView {
 }
 
 impl EditorView {
-    pub fn add_editor(&self, plugin: Box<dyn Plugin>) {
+    pub fn add_editor(&self, display_name: &str, editor: gtk::Widget) {
         // tab header
         let icon = gtk::Image::builder()
             .icon_name("folder-visiting-symbolic")
             .build();
 
-        let label = gtk::Label::builder().label(plugin.name()).build();
+        let label = gtk::Label::builder().label(display_name).build();
 
         let btn_close = gtk::Button::builder()
             .tooltip_text("close")
@@ -39,7 +39,7 @@ impl EditorView {
         th.append(&btn_close);
 
         // content
-        let widget = plugin.build_widget();
+        // let widget = plugin.build_widget();
 
         let content = gtk::Box::builder()
             .hexpand(true)
@@ -49,9 +49,10 @@ impl EditorView {
             .margin_start(2)
             .margin_end(2)
             .build();
-        content.append(&widget);
+        content.append(&editor);
 
-        self.nb.append_page(&content, Some(&th));
+        let page_id = self.nb.append_page(&content, Some(&th));
+        self.nb.set_current_page(Some(page_id));
     }
 }
 

@@ -16,9 +16,9 @@ impl EditorView {
         glib::Object::builder().build()
     }
 
-    pub fn add_editor(&self, plugin: Box<dyn Plugin>) {
+    pub fn add_editor(&self, display_name: &str, widget: gtk::Widget) {
         let imp = self.imp();
-        imp.add_editor(plugin);
+        imp.add_editor(&display_name, widget);
     }
 }
 
