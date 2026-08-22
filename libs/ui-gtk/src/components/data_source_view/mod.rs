@@ -1,10 +1,14 @@
+mod gnode;
 mod imp;
+pub mod node;
 
+use std::sync::Arc;
 use tracing::debug;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 use crate::{App, plugins::PluginRegistry};
+use node::Node;
 
 glib::wrapper! {
     pub struct DataSourceView(ObjectSubclass<imp::DataSourceView>)
@@ -42,8 +46,11 @@ impl DataSourceView {
             .clone();
     }
 
-    pub fn data_source_add(&self) {
+    pub fn data_source_add(&self, node: Arc<dyn Node>) {
         debug!("//todo data_source_add");
+
+        let imp = self.imp();
+        imp.data_source_add(node);
     }
 }
 

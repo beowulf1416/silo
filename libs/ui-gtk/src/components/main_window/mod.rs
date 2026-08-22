@@ -5,8 +5,10 @@ use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use tracing::{debug, error, warn};
 
 use serde_json::Value;
+use std::sync::Arc;
 
 use crate::App;
+use crate::components::data_source_view::node::SimpleNode;
 use crate::plugins::Plugin;
 
 // type PluginFactory = fn() -> Box<dyn Plugin>;
@@ -110,8 +112,16 @@ impl MainWindow {
             MainWindowInputMessage::DataSourceAdd(config) => {
                 debug!("DataSourceAdd {:?}", config);
 
+                let node = SimpleNode {
+                    name: "test".to_string(),
+                    children: vec![Arc::new(SimpleNode {
+                        name: "test_2".to_string(),
+                        children: vec![],
+                    })],
+                };
+
                 let imp = self.imp();
-                imp.dsv.data_source_add();
+                imp.dsv.data_source_add(Arc::new(node));
             }
         }
     }
