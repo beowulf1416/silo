@@ -108,6 +108,8 @@ impl PostgresPlugin {
     }
 
     pub fn get_configuration(&self) -> Value {
+        debug!("get_configuration");
+
         let name = self.entry_name.text().to_string();
         let db = self.entry_db.text().to_string();
         let host = self.entry_host.text().to_string();

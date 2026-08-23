@@ -14,12 +14,27 @@ use crate::{
 };
 use gnode::GNode;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct DataSourceView {
     pub registry: RefCell<Option<PluginRegistry>>,
 
     pub tv: gtk::ColumnView,
     pub sources: RefCell<Option<Vec<Arc<dyn Node>>>>,
+    pub store: gio::ListStore,
+}
+
+impl Default for DataSourceView {
+    fn default() -> Self {
+        return Self {
+            registry: RefCell::new(None),
+            tv: gtk::ColumnView::builder()
+                .hexpand(true)
+                .vexpand(true)
+                .build(),
+            sources: RefCell::new(None),
+            store: gio::ListStore::new::<GNode>(),
+        };
+    }
 }
 
 impl DataSourceView {
@@ -77,12 +92,14 @@ impl DataSourceView {
 
     pub fn data_source_add(&self, node: Arc<dyn Node>) {
         debug!("data source add");
-        self.sources
-            .borrow_mut()
-            // .get_or_insert(Vec::<Arc<dyn Node>>::new)
-            .as_mut()
-            .expect("Vec<Arc<dyn Node>> expected")
-            .push(node);
+        // self.sources
+        //     .borrow_mut()
+        //     // .get_or_insert(Vec::<Arc<dyn Node>>::new)
+        //     .as_mut()
+        //     .expect("Vec<Arc<dyn Node>> expected")
+        //     .push(node);
+
+        self.store.append(&GNode::new(Arc::clone(&node)));
     }
 
     pub fn build_name_column(&self) -> gtk::ColumnViewColumn {
@@ -103,10 +120,15 @@ impl DataSourceView {
             let litem = item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("expecting gtk::ListItem");
+
             let row = litem
                 .item()
                 .and_downcast::<gtk::TreeListRow>()
                 .expect("expecting gtk::TreeListRow");
+            row.connect_expanded_notify(|row| {
+                let is_expanded = row.is_expanded();
+                debug!("row is expanded {}", is_expanded);
+            });
 
             let gnode = row.item().and_downcast::<GNode>().expect("expecting GNode");
 
@@ -128,6 +150,64 @@ impl DataSourceView {
         return column;
     }
 
+    pub fn build_actions_column(&self) -> gtk::ColumnViewColumn {
+        let factory = gtk::SignalListItemFactory::new();
+        factory.connect_setup(|_factory, item| {
+            let litem = item.downcast_ref::<gtk::ListItem>().unwrap();
+
+            // let label = gtk::Label::new(None);
+            // label.set_xalign(0.0);
+
+            // let expander = gtk::TreeExpander::new();
+            // expander.set_child(Some(&label));
+            //
+
+            let button = gtk::Button::builder()
+                .tooltip_text("Action")
+                .icon_name("ellipsis_vertical")
+                .hexpand(false)
+                .css_classes(vec!["btn", "flat"])
+                .build();
+
+            litem.set_child(Some(&button));
+        });
+
+        factory.connect_bind(|_factory, item| {
+            let litem = item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("expecting gtk::ListItem");
+            let row = litem
+                .item()
+                .and_downcast::<gtk::TreeListRow>()
+                .expect("expecting gtk::TreeListRow");
+
+            // let gnode = row.item().and_downcast::<GNode>().expect("expecting GNode");
+
+            // let expander = litem
+            //     .child()
+            //     .and_downcast::<gtk::TreeExpander>()
+            //     .expect("expecting gtk::TreeExpander");
+            // expander.set_list_row(Some(&row));
+
+            // let label = expander
+            //     .child()
+            //     .and_downcast::<gtk::Label>()
+            //     .expect("expecting gtk::Label");
+
+            // let label = litem
+            //     .child()
+            //     .and_downcast::<gtk::Label>()
+            //     .expect("gtk::Label expected");
+            // label.set_label(&gnode.node().display_name());
+
+            // let button = litem
+        });
+
+        let column = gtk::ColumnViewColumn::new(Some(""), Some(factory));
+        column.set_expand(true);
+        return column;
+    }
+
     pub fn build_tree(&self) {
         // let sources: std::vec::Vec<Rc<dyn Node>> = vec![];
         let sources = self
@@ -138,12 +218,12 @@ impl DataSourceView {
             .clone();
 
         // root level nodes
-        let ls = gio::ListStore::new::<GNode>();
+        // let ls = gio::ListStore::new::<GNode>();
         for s in sources {
-            ls.append(&GNode::new(Arc::clone(&s)));
+            self.store.append(&GNode::new(Arc::clone(&s)));
         }
 
-        let model = gtk::TreeListModel::new(ls, false, false, |item| {
+        let model = gtk::TreeListModel::new(self.store.clone(), false, false, |item| {
             let gnode = item.downcast_ref::<GNode>().expect("GNode");
             let child_store = gio::ListStore::new::<GNode>();
 
@@ -156,16 +236,9 @@ impl DataSourceView {
 
         let selection = gtk::SingleSelection::builder().model(&model).build();
 
-        // let tv = gtk::ColumnView::builder().model(&selection).build();
         self.tv.set_model(Some(&selection));
         self.tv.append_column(&self.build_name_column());
-
-        // let sw = gtk::ScrolledWindow::builder()
-        //     .hexpand(true)
-        //     .vexpand(true)
-        //     .build();
-        // sw.set_child(Some(&tv));
-        // root.append(&sw);
+        self.tv.append_column(&self.build_actions_column());
     }
 }
 

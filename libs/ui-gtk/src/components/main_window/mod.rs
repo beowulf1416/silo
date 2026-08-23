@@ -20,7 +20,7 @@ pub enum MainWindowInputMessage {
     CloseRequested,
     WorkspaceChanged(WorkspacePath),
     NewDataSourceRequest(PluginName),
-    DataSourceAdd(Value),
+    DataSourceAdd(SimpleNode),
 }
 
 glib::wrapper! {
@@ -109,16 +109,16 @@ impl MainWindow {
                     error!("unable to find plugin {}", plugin_name);
                 }
             }
-            MainWindowInputMessage::DataSourceAdd(config) => {
-                debug!("DataSourceAdd {:?}", config);
+            MainWindowInputMessage::DataSourceAdd(node) => {
+                debug!("DataSourceAdd {:?}", node);
 
-                let node = SimpleNode {
-                    name: "test".to_string(),
-                    children: vec![Arc::new(SimpleNode {
-                        name: "test_2".to_string(),
-                        children: vec![],
-                    })],
-                };
+                // let node = SimpleNode {
+                //     name: "test".to_string(),
+                //     children: vec![Arc::new(SimpleNode {
+                //         name: "test_2".to_string(),
+                //         children: vec![],
+                //     })],
+                // };
 
                 let imp = self.imp();
                 imp.dsv.data_source_add(Arc::new(node));

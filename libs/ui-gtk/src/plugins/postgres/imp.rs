@@ -2,8 +2,12 @@ use tracing::{debug, error};
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use std::cell::RefCell;
+use std::sync::Arc;
 
-use crate::components::main_window::{MainWindow, MainWindowInputMessage};
+use crate::components::{
+    data_source_view::node::SimpleNode,
+    main_window::{MainWindow, MainWindowInputMessage},
+};
 
 #[derive(Debug, Default)]
 pub struct PostgresConnectionEditor {
@@ -131,10 +135,34 @@ impl ObjectImpl for PostgresConnectionEditor {
             move |_button| {
                 debug!("//todo save button clicked");
 
+                let node = SimpleNode {
+                    name: editor.entry_name.text().to_string(),
+                    children: vec![
+                        Arc::new(SimpleNode {
+                            name: "Schemas".to_string(),
+                            children: vec![],
+                        }),
+                        Arc::new(SimpleNode {
+                            name: "Security".to_string(),
+                            children: vec![
+                                Arc::new(SimpleNode {
+                                    name: "Users".to_string(),
+                                    children: vec![],
+                                }),
+                                Arc::new(SimpleNode {
+                                    name: "Roles".to_string(),
+                                    children: vec![],
+                                }),
+                            ],
+                        }),
+                    ],
+                };
+
                 // obj.save_configuration();
                 if let Some(window) = editor.window.borrow().as_ref() {
                     let _ = window.send(MainWindowInputMessage::DataSourceAdd(
-                        serde_json::json!({ "name": "test" }),
+                        // serde_json::json!({ "name": "test" }),
+                        node,
                     ));
                 }
             }
