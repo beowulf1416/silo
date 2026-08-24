@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 pub trait Node: std::fmt::Debug {
     fn display_name(&self) -> &String;
-    fn children(&self) -> &Vec<Arc<dyn Node>>;
+    fn children(&self) -> &[Arc<dyn Node>];
 }
 
 #[derive(Debug, Clone)]
@@ -17,12 +17,12 @@ impl Node for SimpleNode {
         return &self.name;
     }
 
-    fn children(&self) -> &Vec<Arc<dyn Node>> {
+    fn children(&self) -> &[Arc<dyn Node>] {
         return &self.children;
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ObjectTypeNode {
     pub name: String,
     pub children: Vec<Arc<dyn Node>>,
@@ -33,15 +33,33 @@ impl Node for ObjectTypeNode {
         return &self.name;
     }
 
-    fn children(&self) -> &Vec<Arc<dyn Node>> {
+    fn children(&self) -> &[Arc<dyn Node>] {
         return &self.children;
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DataSourceNode {
     pub name: String,
-    pub children: Vec<Arc<dyn Node>>,
+    children: Vec<Arc<dyn Node>>,
+    pub config: serde_json::Value,
+}
+
+impl DataSourceNode {
+    pub fn new(
+        name: String,
+        children: Vec<Arc<ObjectTypeNode>>,
+        config: serde_json::Value,
+    ) -> Self {
+        return Self {
+            name: name,
+            children: children
+                .into_iter()
+                .map(|n| n.clone() as Arc<dyn Node>)
+                .collect(),
+            config: config,
+        };
+    }
 }
 
 impl Node for DataSourceNode {
@@ -49,7 +67,7 @@ impl Node for DataSourceNode {
         return &self.name;
     }
 
-    fn children(&self) -> &Vec<Arc<dyn Node>> {
+    fn children(&self) -> &[Arc<dyn Node>] {
         return &self.children;
     }
 }

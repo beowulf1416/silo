@@ -5,5 +5,6 @@
         <file compressed="true" preprocess="xml-stripblanks">save.svg</file>
         <file compressed="true" preprocess="xml-stripblanks">connect.svg</file>
         <file compressed="true" preprocess="xml-stripblanks">ellipsis_vertical.svg</file>
+        <file compressed="true" preprocess="xml-stripblanks">data_source.svg</file>
     </gresource>
 </gresources>

@@ -8,32 +8,29 @@ use std::sync::Arc;
 use gtk::prelude::*;
 use gtk::{gio, glib, subclass::prelude::*};
 
-use super::*;
-use node::Node;
+use crate::components::data_sources_view::node::Node;
 
 glib::wrapper! {
     pub struct GNode(ObjectSubclass<imp::GNode>);
 }
 
 impl GNode {
-    pub fn new(node: Arc<dyn Node>) -> Self {
+    pub fn new(node: Arc<Node>) -> Self {
         let obj: Self = glib::Object::new();
         obj.imp().node.replace(Some(node));
         return obj;
     }
 
-    pub fn node(&self) -> Arc<dyn Node> {
+    pub fn node(&self) -> Arc<Node> {
         let imp = self.imp();
         return imp.node.borrow().as_ref().expect("Node expected").clone();
-        // return self.imp().node.borrow().expect("Node expected");
-        // .expect("expecting node");
     }
 
     pub fn display_name(&self) -> String {
-        return self.node().display_name().to_string();
+        return self.node().name().to_string();
     }
 
-    pub fn children(&self) -> Vec<Arc<dyn Node>> {
+    pub fn children(&self) -> Vec<Arc<Node>> {
         return self.node().children().to_vec();
     }
 }

@@ -1,4 +1,5 @@
 mod imp;
+pub mod node;
 pub mod postgres_plugin;
 
 use tracing::debug;

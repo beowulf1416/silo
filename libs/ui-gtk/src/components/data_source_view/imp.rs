@@ -9,7 +9,10 @@ use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 use super::node::Node;
 use crate::{
-    components::data_source_view::{gnode, node::SimpleNode},
+    components::data_source_view::{
+        gnode,
+        node::{DataSourceNode, SimpleNode},
+    },
     plugins::PluginRegistry,
 };
 use gnode::GNode;
@@ -155,13 +158,6 @@ impl DataSourceView {
         factory.connect_setup(|_factory, item| {
             let litem = item.downcast_ref::<gtk::ListItem>().unwrap();
 
-            // let label = gtk::Label::new(None);
-            // label.set_xalign(0.0);
-
-            // let expander = gtk::TreeExpander::new();
-            // expander.set_child(Some(&label));
-            //
-
             let button = gtk::Button::builder()
                 .tooltip_text("Action")
                 .icon_name("ellipsis_vertical")
@@ -176,31 +172,10 @@ impl DataSourceView {
             let litem = item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("expecting gtk::ListItem");
-            let row = litem
-                .item()
-                .and_downcast::<gtk::TreeListRow>()
-                .expect("expecting gtk::TreeListRow");
-
-            // let gnode = row.item().and_downcast::<GNode>().expect("expecting GNode");
-
-            // let expander = litem
-            //     .child()
-            //     .and_downcast::<gtk::TreeExpander>()
-            //     .expect("expecting gtk::TreeExpander");
-            // expander.set_list_row(Some(&row));
-
-            // let label = expander
-            //     .child()
-            //     .and_downcast::<gtk::Label>()
-            //     .expect("expecting gtk::Label");
-
-            // let label = litem
-            //     .child()
-            //     .and_downcast::<gtk::Label>()
-            //     .expect("gtk::Label expected");
-            // label.set_label(&gnode.node().display_name());
-
-            // let button = litem
+            // let row = litem
+            //     .item()
+            //     .and_downcast::<gtk::TreeListRow>()
+            //     .expect("expecting gtk::TreeListRow");
         });
 
         let column = gtk::ColumnViewColumn::new(Some(""), Some(factory));

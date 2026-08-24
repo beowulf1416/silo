@@ -121,7 +121,7 @@ impl MainWindow {
                 // };
 
                 let imp = self.imp();
-                imp.dsv.data_source_add(Arc::new(node));
+                // imp.dsv.data_source_add(Arc::new(node));
             }
         }
     }

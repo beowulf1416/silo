@@ -17,7 +17,8 @@ use super::MainWindowInputMessage;
 use crate::{
     APP_TITLE,
     app::App,
-    components::data_source_view::DataSourceView,
+    // components::data_source_view::DataSourceView,
+    components::data_sources_view::DataSourcesView,
     plugins::{PluginRegistry, postgres::postgres_plugin::PostgresPlugin},
 };
 use crate::{
@@ -35,7 +36,8 @@ pub struct MainWindow {
     pub sender: RefCell<Option<async_channel::Sender<MainWindowInputMessage>>>,
     pub header_bar: Header,
     // pub pane: gtk::Paned,
-    pub dsv: DataSourceView,
+    // pub dsv: DataSourceView,
+    pub dsv: DataSourcesView,
     pub ev: EditorView,
 
     // pub plugins: HashMap<String, Box<dyn Plugin>>,
