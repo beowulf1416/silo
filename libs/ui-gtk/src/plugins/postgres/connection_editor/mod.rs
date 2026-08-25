@@ -1,14 +1,9 @@
-pub mod connection_editor;
-pub mod query_editor;
-// mod imp;
-pub mod node;
-pub mod postgres_plugin;
+mod imp;
 
 use tracing::debug;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
-/*
 use crate::components::main_window::MainWindow;
 
 glib::wrapper! {
@@ -55,4 +50,3 @@ impl Default for PostgresConnectionEditor {
         return Self::new();
     }
 }
-*/
