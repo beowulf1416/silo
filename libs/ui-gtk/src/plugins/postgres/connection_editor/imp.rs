@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::sync::Arc;
 
 use crate::components::{
-    data_sources_view::tree_node::data_source_node::DataSourceNode,
+    // data_sources_view::tree_node::data_source_node::DataSourceNode,
     main_window::{MainWindow, MainWindowInputMessage},
 };
 
@@ -143,14 +143,14 @@ impl ObjectImpl for PostgresConnectionEditor {
             move |_button| {
                 debug!("//todo save button clicked");
 
-                let node = DataSourceNode {
-                    name: editor.entry_name.text().to_string(),
-                    host: editor.entry_host.text().to_string(),
-                    port: editor.entry_port.value() as u16,
-                    user: editor.entry_user.text().to_string(),
-                    pw: editor.entry_pw.text().to_string(),
-                    db_name: editor.entry_db.text().to_string(),
-                };
+                // let node = DataSourceNode {
+                //     name: editor.entry_name.text().to_string(),
+                //     host: editor.entry_host.text().to_string(),
+                //     port: editor.entry_port.value() as u16,
+                //     user: editor.entry_user.text().to_string(),
+                //     pw: editor.entry_pw.text().to_string(),
+                //     db_name: editor.entry_db.text().to_string(),
+                // };
 
                 // let node = SimpleNode {
                 //     name: editor.entry_name.text().to_string(),
@@ -177,10 +177,10 @@ impl ObjectImpl for PostgresConnectionEditor {
 
                 // obj.save_configuration();
                 if let Some(window) = editor.window.borrow().as_ref() {
-                    let _ = window.send(MainWindowInputMessage::DataSourceAdd(
-                        // serde_json::json!({ "name": "test" }),
-                        node,
-                    ));
+                    // let _ = window.send(MainWindowInputMessage::DataSourceAdd(
+                    //     // serde_json::json!({ "name": "test" }),
+                    //     node,
+                    // ));
                 }
             }
         ));

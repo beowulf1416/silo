@@ -8,8 +8,9 @@ use serde_json::Value;
 use std::sync::Arc;
 
 use crate::App;
+use crate::components::data_sources_view::node::Node;
 // use crate::components::data_source_view::node::SimpleNode;
-use crate::components::data_sources_view::tree_node::data_source_node::DataSourceNode;
+// use crate::components::data_sources_view::tree_node::data_source_node::DataSourceNode;
 use crate::plugins::Plugin;
 
 // type PluginFactory = fn() -> Box<dyn Plugin>;
@@ -21,7 +22,7 @@ pub enum MainWindowInputMessage {
     CloseRequested,
     WorkspaceChanged(WorkspacePath),
     NewDataSourceRequest(PluginName),
-    DataSourceAdd(DataSourceNode),
+    DataSourceAdd(Box<dyn Node>),
 }
 
 glib::wrapper! {
@@ -110,8 +111,8 @@ impl MainWindow {
                     error!("unable to find plugin {}", plugin_name);
                 }
             }
-            MainWindowInputMessage::DataSourceAdd(node) => {
-                debug!("DataSourceAdd {:?}", node);
+            MainWindowInputMessage::DataSourceAdd(box_node) => {
+                debug!("DataSourceAdd {:?}", box_node);
 
                 // let node = SimpleNode {
                 //     name: "test".to_string(),
@@ -123,7 +124,7 @@ impl MainWindow {
 
                 let imp = self.imp();
                 // imp.dsv.data_source_add(Arc::new(node));
-                imp.dsv.data_source_add(node);
+                imp.dsv.data_source_add(box_node);
             }
         }
     }

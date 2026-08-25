@@ -1,12 +1,14 @@
 // pub mod gnode;
 mod imp;
-pub mod tree_node;
+pub mod node;
+// pub mod tree_node;
 
 use tracing::debug;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
-use crate::components::data_sources_view::tree_node::{Node, data_source_node::DataSourceNode};
+// use crate::components::data_sources_view::tree_node::{Node, data_source_node::DataSourceNode};
+use crate::components::data_sources_view::node::Node;
 
 // use crate::components::data_sources_view::
 
@@ -26,7 +28,11 @@ impl DataSourcesView {
         return window;
     }
 
-    pub fn data_source_add(&self, node: DataSourceNode) {
+    // pub fn data_source_add(&self, node: DataSourceNode) {
+    //     let imp = self.imp();
+    //     imp.data_source_add(node);
+    // }
+    pub fn data_source_add(&self, node: Box<dyn Node>) {
         let imp = self.imp();
         imp.data_source_add(node);
     }

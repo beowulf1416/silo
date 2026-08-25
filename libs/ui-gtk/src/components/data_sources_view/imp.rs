@@ -1,13 +1,14 @@
 use tracing::{debug, error};
 
 use async_channel::Sender;
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::sync::Arc;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 // use crate::components::data_sources_view::gnode::GNode;
-use crate::components::data_sources_view::tree_node::{data_source_node::DataSourceNode, *};
+// use crate::components::data_sources_view::tree_node::{data_source_node::DataSourceNode, *};
+use crate::components::data_sources_view::node::Node;
 
 #[derive(Debug)]
 pub struct DataSourcesView {
@@ -19,7 +20,8 @@ pub struct DataSourcesView {
 impl DataSourcesView {
     pub fn new() -> Self {
         return Self {
-            store: gio::ListStore::new::<TreeNode>(),
+            // store: gio::ListStore::new::<TreeNode>(),
+            store: gio::ListStore::new::<glib::BoxedAnyObject>(),
             // sources: vec![],
             tv: gtk::ColumnView::builder()
                 .hexpand(true)
@@ -98,19 +100,21 @@ impl DataSourcesView {
 
     pub fn build_tree(&self) -> gtk::ScrolledWindow {
         // todo
-        let dsn = data_source_node::DataSourceNode::new(
-            &"test_name",
-            &"test_host",
-            &1234u16,
-            &"test_user",
-            &"test_pw",
-            &"test_db",
-        );
-        let node = Node::DataSourceNode(dsn);
-        self.store.append(&TreeNode::new(node));
+        // let dsn = data_source_node::DataSourceNode::new(
+        //     &"test_name",
+        //     &"test_host",
+        //     &1234u16,
+        //     &"test_user",
+        //     &"test_pw",
+        //     &"test_db",
+        // );
+        // let node = Node::DataSourceNode(dsn);
+        // self.store.append(&TreeNode::new(node));
 
         let model = gtk::TreeListModel::new(self.store.clone(), false, false, |obj| {
-            let node = obj.downcast_ref::<TreeNode>().expect("//todo TreeNode");
+            let node = obj
+                .downcast_ref::<glib::BoxedAnyObject>()
+                .expect("//todo BoxedAnyObject");
             return Self::create_child_model(&node);
         });
 
@@ -129,38 +133,40 @@ impl DataSourcesView {
         return sw;
     }
 
-    fn create_child_model(tn: &TreeNode) -> Option<gio::ListModel> {
-        debug!("//todo: create_child_model {:?}", tn);
+    fn create_child_model(obj: &glib::BoxedAnyObject) -> Option<gio::ListModel> {
+        let store = gio::ListStore::new::<glib::BoxedAnyObject>();
 
-        let store = gio::ListStore::new::<TreeNode>();
+        let node_ref: Ref<Box<dyn Node>> = obj.borrow::<Box<dyn Node>>();
+        let node: &dyn Node = node_ref.as_ref();
+        debug!("node {:?}", node);
 
-        match tn.node() {
-            Node::DataSourceNode(dsn) => {
-                debug!("DataSourceNode {:?}", dsn);
+        // match tn.node() {
+        //     Node::DataSourceNode(dsn) => {
+        //         debug!("DataSourceNode {:?}", dsn);
 
-                store.append(&TreeNode::new(Node::SchemaNode(
-                    schema_node::SchemaNode::new("public"),
-                )));
-                store.append(&TreeNode::new(Node::SchemaNode(
-                    schema_node::SchemaNode::new("eas"),
-                )));
-            }
-            Node::SchemaNode(sn) => {
-                debug!("//todo SchemaNode");
-                store.append(&TreeNode::new(Node::SchemaObjectNode(
-                    schema_object_node::SchemaObjectNode::new("Tables"),
-                )));
-                store.append(&TreeNode::new(Node::SchemaObjectNode(
-                    schema_object_node::SchemaObjectNode::new("Stored Proceduers"),
-                )));
-            }
-            Node::SchemaObjectNode(son) => {
-                debug!("//todo SchemaObjectNode");
-            }
-            Node::TableNode => {
-                debug!("//todo TableNode");
-            }
-        }
+        //         store.append(&TreeNode::new(Node::SchemaNode(
+        //             schema_node::SchemaNode::new("public"),
+        //         )));
+        //         store.append(&TreeNode::new(Node::SchemaNode(
+        //             schema_node::SchemaNode::new("eas"),
+        //         )));
+        //     }
+        //     Node::SchemaNode(sn) => {
+        //         debug!("//todo SchemaNode");
+        //         store.append(&TreeNode::new(Node::SchemaObjectNode(
+        //             schema_object_node::SchemaObjectNode::new("Tables"),
+        //         )));
+        //         store.append(&TreeNode::new(Node::SchemaObjectNode(
+        //             schema_object_node::SchemaObjectNode::new("Stored Proceduers"),
+        //         )));
+        //     }
+        //     Node::SchemaObjectNode(son) => {
+        //         debug!("//todo SchemaObjectNode");
+        //     }
+        //     Node::TableNode => {
+        //         debug!("//todo TableNode");
+        //     }
+        // }
 
         return Some(store.upcast());
     }
@@ -193,10 +199,13 @@ impl DataSourcesView {
                 debug!("row is expanded {}", is_expanded);
             });
 
-            let node = row
+            let obj = row
                 .item()
-                .and_downcast::<TreeNode>()
-                .expect("expecting TreeNode");
+                .and_downcast::<glib::BoxedAnyObject>()
+                .expect("expecting BoxedAnyObject");
+
+            let node_ref: Ref<Box<dyn Node>> = obj.borrow::<Box<dyn Node>>();
+            let node: &dyn Node = node_ref.as_ref();
 
             let expander = litem
                 .child()
@@ -216,11 +225,15 @@ impl DataSourcesView {
         return column;
     }
 
-    pub fn data_source_add(&self, node: DataSourceNode) {
-        self.store
-            .append(&TreeNode::new(Node::DataSourceNode(node)));
-        // self.store
-        //     .borrow_mut(&TreeNode::new(Node::DataSourceNode(node)));
+    // pub fn data_source_add(&self, node: DataSourceNode) {
+    //     self.store
+    //         .append(&TreeNode::new(Node::DataSourceNode(node)));
+    //     // self.store
+    //     //     .borrow_mut(&TreeNode::new(Node::DataSourceNode(node)));
+    // }
+
+    pub fn data_source_add(&self, node: Box<dyn Node>) {
+        self.store.append(&glib::BoxedAnyObject::new(node));
     }
 }
 
