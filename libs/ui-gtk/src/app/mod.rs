@@ -66,6 +66,8 @@ impl App {
             crate::plugins::postgres::postgres_plugin::factory,
         );
 
+        registry.register("mysql", crate::plugins::mysql::plugin::factory);
+
         debug!("registry {:?}", registry);
 
         let imp = self.imp();

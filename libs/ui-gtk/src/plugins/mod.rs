@@ -18,6 +18,7 @@ pub trait Plugin: std::fmt::Debug {
     fn name(&self) -> &str;
     // fn build_widget(&self) -> gtk::Widget;
     fn build_data_source_editor_widget(&self, window: &MainWindow) -> Option<gtk::Widget>;
+    fn build_query_editor_widget(&self, window: &MainWindow) -> Option<gtk::Widget>;
 }
 
 type PluginFactory = fn() -> Box<dyn Plugin>;

@@ -7,20 +7,20 @@ use std::sync::Arc;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 // use crate::components::data_sources_view::gnode::GNode;
-use crate::components::data_sources_view::tree_node::*;
+use crate::components::data_sources_view::tree_node::{data_source_node::DataSourceNode, *};
 
 #[derive(Debug)]
 pub struct DataSourcesView {
     pub store: gio::ListStore,
     pub tv: gtk::ColumnView,
-    pub sources: Vec<Arc<data_source_node::DataSourceNode>>,
+    // pub sources: Vec<Arc<data_source_node::DataSourceNode>>,
 }
 
 impl DataSourcesView {
     pub fn new() -> Self {
         return Self {
             store: gio::ListStore::new::<TreeNode>(),
-            sources: vec![],
+            // sources: vec![],
             tv: gtk::ColumnView::builder()
                 .hexpand(true)
                 .vexpand(true)
@@ -214,6 +214,13 @@ impl DataSourcesView {
         let column = gtk::ColumnViewColumn::new(Some("Name"), Some(factory));
         column.set_expand(true);
         return column;
+    }
+
+    pub fn data_source_add(&self, node: DataSourceNode) {
+        self.store
+            .append(&TreeNode::new(Node::DataSourceNode(node)));
+        // self.store
+        //     .borrow_mut(&TreeNode::new(Node::DataSourceNode(node)));
     }
 }
 

@@ -6,6 +6,8 @@ use tracing::debug;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
+use crate::components::data_sources_view::tree_node::{Node, data_source_node::DataSourceNode};
+
 // use crate::components::data_sources_view::
 
 glib::wrapper! {
@@ -22,6 +24,11 @@ impl DataSourcesView {
         let window: Self = glib::Object::builder().build();
 
         return window;
+    }
+
+    pub fn data_source_add(&self, node: DataSourceNode) {
+        let imp = self.imp();
+        imp.data_source_add(node);
     }
 }
 
