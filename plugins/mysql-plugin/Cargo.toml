@@ -1,0 +1,16 @@
+[package]
+name = "mysql-plugin"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tracing = "*"
+serde = "*"
+async-channel = "*"
+
+gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
+sqlx = { version = "*", features = ["mysql", "uuid", "chrono", "macros"] }
+
+
+# projects
+silo-plugin = { path = "../../libs/silo-plugin" }

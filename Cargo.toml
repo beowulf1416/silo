@@ -3,7 +3,8 @@ members = [
     "libs/silo-base",
     "libs/silo-plugin",
     "libs/ui-gtk",
-    "plugins/plugin-postgres",
+    "plugins/mysql-plugin",
+    "plugins/postgres",
     "silo",
     "silo-cli"
 ]

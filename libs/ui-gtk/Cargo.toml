@@ -18,6 +18,7 @@ silo-base = { path = "../silo-base" }
 silo-plugin = { path = "../silo-plugin" }
 
 postgres = { path = "../../plugins/postgres" }
+mysql-plugin = { path = "../../plugins/mysql-plugin" }
 
 
 [build-dependencies]

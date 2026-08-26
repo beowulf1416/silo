@@ -71,6 +71,7 @@ impl App {
         // registry.register("mysql", crate::plugins::mysql::plugin::factory);
 
         registry.register("postgres", postgres::plugin::factory);
+        registry.register("mysql", mysql_plugin::plugin::factory);
 
         debug!("registry {:?}", registry);
 
