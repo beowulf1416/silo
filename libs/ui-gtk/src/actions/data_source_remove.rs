@@ -2,7 +2,8 @@ use tracing::debug;
 
 use gtk::{gio, glib, prelude::*};
 
-use crate::components::main_window::{MainWindow, MainWindowInputMessage};
+use crate::components::main_window::MainWindow;
+use silo_plugin::ApplicationMessage;
 
 pub fn data_source_remove_action(window: &MainWindow) -> gio::SimpleAction {
     let action = gio::SimpleAction::new("data-source-remove", None);
@@ -11,7 +12,7 @@ pub fn data_source_remove_action(window: &MainWindow) -> gio::SimpleAction {
         window,
         move |a, b| {
             debug!("data-source-remove action activated");
-            // window.send(MainWindowInputMessage::CloseRequested);
+            // window.send(ApplicationMessage::Data);
         }
     ));
 

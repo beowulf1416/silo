@@ -12,18 +12,19 @@ use crate::components::data_sources_view::node::Node;
 // use crate::components::data_source_view::node::SimpleNode;
 // use crate::components::data_sources_view::tree_node::data_source_node::DataSourceNode;
 use crate::plugins::Plugin;
+use silo_plugin::ApplicationMessage;
 
 // type PluginFactory = fn() -> Box<dyn Plugin>;
 type PluginName = String;
 type WorkspacePath = String;
 
-#[derive(Debug, Clone)]
-pub enum MainWindowInputMessage {
-    CloseRequested,
-    WorkspaceChanged(WorkspacePath),
-    NewDataSourceRequest(PluginName),
-    DataSourceAdd(Box<dyn Node>),
-}
+// #[derive(Debug, Clone)]
+// pub enum MainWindowInputMessage {
+//     CloseRequested,
+//     WorkspaceChanged(WorkspacePath),
+//     NewDataSourceRequest(PluginName),
+//     DataSourceAdd(Box<dyn Node>),
+// }
 
 glib::wrapper! {
     pub struct MainWindow(ObjectSubclass<imp::MainWindow>)
@@ -62,7 +63,7 @@ impl MainWindow {
             .clone();
     }
 
-    pub fn start_receiver(&self, receiver: Receiver<MainWindowInputMessage>) {
+    pub fn start_receiver(&self, receiver: Receiver<ApplicationMessage>) {
         glib::MainContext::default().spawn_local(glib::clone!(
             #[weak(rename_to = window)]
             self,
@@ -74,25 +75,22 @@ impl MainWindow {
         ));
     }
 
-    fn process_message(&self, msg: MainWindowInputMessage) {
+    fn process_message(&self, msg: ApplicationMessage) {
         match msg {
-            MainWindowInputMessage::CloseRequested => {
+            ApplicationMessage::CloseRequested => {
                 debug!("process_message: close requested");
                 if let Some(app) = self.application() {
                     app.quit();
                 }
             }
-            MainWindowInputMessage::WorkspaceChanged(workspace_path) => {
+            ApplicationMessage::WorkspaceChanged(workspace_path) => {
                 debug!("workspace changed {}", workspace_path);
-
-                // let imp = self.imp();
-                // imp.app
-                //     .borrow()
-                //     .expect("App expected")
-                //     .set_workspace_path(workspace_path);
                 self.set_workspace_path(&workspace_path);
             }
-            MainWindowInputMessage::NewDataSourceRequest(plugin_name) => {
+            ApplicationMessage::WorkspaceSaveRequested => {
+                debug!("//todo workspace save requested");
+            }
+            ApplicationMessage::NewDataSourceRequested(plugin_name) => {
                 debug!(
                     "process message: new data source requested: {}",
                     plugin_name
@@ -101,7 +99,9 @@ impl MainWindow {
                 if let Some(plugin) = self.app().registry().create_plugin(&plugin_name) {
                     debug!("plugin {:?}", plugin);
 
-                    if let Some(widget) = plugin.build_data_source_editor_widget(&self) {
+                    if let Some(widget) =
+                        plugin.build_data_source_editor_widget(self.imp().sender())
+                    {
                         let imp = self.imp();
                         imp.ev.add_editor(&plugin_name, widget);
                     } else {
@@ -111,25 +111,16 @@ impl MainWindow {
                     error!("unable to find plugin {}", plugin_name);
                 }
             }
-            MainWindowInputMessage::DataSourceAdd(box_node) => {
+            ApplicationMessage::DataSourceAdd(box_node) => {
                 debug!("DataSourceAdd {:?}", box_node);
 
-                // let node = SimpleNode {
-                //     name: "test".to_string(),
-                //     children: vec![Arc::new(SimpleNode {
-                //         name: "test_2".to_string(),
-                //         children: vec![],
-                //     })],
-                // };
-
                 let imp = self.imp();
-                // imp.dsv.data_source_add(Arc::new(node));
                 imp.dsv.data_source_add(box_node);
             }
         }
     }
 
-    pub fn send(&self, msg: MainWindowInputMessage) {
+    pub fn send(&self, msg: ApplicationMessage) {
         debug!("send (mod)");
         if let Some(sender) = self.imp().sender.borrow().as_ref() {
             let _ = sender.send_blocking(msg);

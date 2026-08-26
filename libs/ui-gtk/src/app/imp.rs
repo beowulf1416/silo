@@ -9,8 +9,9 @@ use gtk::{gdk, glib, prelude::*, subclass::prelude::*};
 use crate::components::main_window::MainWindow;
 use silo_base::Silo;
 
-use crate::plugins::PluginRegistry;
+// use crate::plugins::PluginRegistry;
 // type PluginFactory = fn() -> Box<dyn Plugin>;
+use silo_plugin::plugin::{Plugin, PluginRegistry};
 
 // #[derive(Debug, Default, glib::Properties)]
 // #[properties(wrapper_type = super::App)]
@@ -21,6 +22,7 @@ pub struct App {
     // pub silo: RefCell<Silo>,
     pub registry: RefCell<Option<PluginRegistry>>,
     pub workspace_path: RefCell<Option<String>>,
+    pub window: RefCell<Option<MainWindow>>,
 }
 
 impl App {
@@ -32,6 +34,10 @@ impl App {
         self.workspace_path.replace(Some(new_path));
 
         // open connections file
+    }
+
+    fn set_main_window(&self, window: MainWindow) {
+        self.window.replace(Some(window));
     }
 }
 
@@ -55,6 +61,12 @@ impl ApplicationImpl for App {
             let window = MainWindow::new(&app);
             window.upcast()
         };
+        self.set_main_window(
+            window
+                .clone()
+                .downcast::<MainWindow>()
+                .expect("//todo MainWindow"),
+        );
 
         window.present();
     }

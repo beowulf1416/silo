@@ -13,13 +13,15 @@ use gtk::{
     subclass::prelude::*,
 };
 
-use super::MainWindowInputMessage;
+// use super::MainWindowInputMessage;
+use silo_plugin::ApplicationMessage;
+
 use crate::{
     APP_TITLE,
     app::App,
     // components::data_source_view::DataSourceView,
     components::data_sources_view::DataSourcesView,
-    plugins::{PluginRegistry, postgres::postgres_plugin::PostgresPlugin},
+    plugins::PluginRegistry,
 };
 use crate::{
     components::{editor_view::EditorView, header::Header},
@@ -33,7 +35,7 @@ use crate::{
 
 #[derive(Debug, Default)]
 pub struct MainWindow {
-    pub sender: RefCell<Option<async_channel::Sender<MainWindowInputMessage>>>,
+    pub sender: RefCell<Option<async_channel::Sender<ApplicationMessage>>>,
     pub header_bar: Header,
     // pub pane: gtk::Paned,
     // pub dsv: DataSourceView,
@@ -56,6 +58,15 @@ impl MainWindow {
     //         .expect("App struct expected")
     //         .set_workspace_path(new_path);
     // }
+
+    pub fn sender(&self) -> async_channel::Sender<ApplicationMessage> {
+        return self
+            .sender
+            .borrow()
+            .as_ref()
+            .expect("sender is not set")
+            .clone();
+    }
 
     fn add_actions(&self) {
         let obj = self.obj().clone();
@@ -132,8 +143,8 @@ impl ObjectImpl for MainWindow {
         // let r = obj.application();
         // debug!("plugins {:?}", obj.application());
 
-        let (sender, receiver) = async_channel::unbounded::<MainWindowInputMessage>();
-        *self.sender.borrow_mut() = Some(sender);
+        let (sender, receiver) = async_channel::unbounded::<ApplicationMessage>();
+        self.sender.replace(Some(sender));
 
         obj.set_default_size(800, 600);
         obj.set_titlebar(Some(&self.header_bar));
@@ -182,7 +193,7 @@ impl WindowImpl for MainWindow {
         debug!("MainWindow::close_request");
 
         let obj = self.obj();
-        obj.send(MainWindowInputMessage::CloseRequested);
+        obj.send(ApplicationMessage::CloseRequested);
 
         return glib::Propagation::Proceed;
     }

@@ -1,27 +1,21 @@
-// pub mod mysql;
-// pub mod postgres;
-pub mod text;
-
-// use serde_json::Value;
 use std::collections::HashMap;
 
-use crate::components::main_window::MainWindow;
-
-type PluginName = String;
-
-#[derive(Debug)]
-pub enum PluginMessage {
-    NewDataSourceRequested(PluginName),
-}
+use crate::ApplicationMessage;
 
 pub trait Plugin: std::fmt::Debug {
     fn name(&self) -> &str;
-    // fn build_widget(&self) -> gtk::Widget;
-    fn build_data_source_editor_widget(&self, window: &MainWindow) -> Option<gtk::Widget>;
-    fn build_query_editor_widget(&self, window: &MainWindow) -> Option<gtk::Widget>;
+
+    fn build_data_source_editor_widget(
+        &self,
+        sender: async_channel::Sender<ApplicationMessage>,
+    ) -> Option<gtk::Widget>;
+    fn build_query_editor_widget(
+        &self,
+        sender: async_channel::Sender<ApplicationMessage>,
+    ) -> Option<gtk::Widget>;
 }
 
-type PluginFactory = fn() -> Box<dyn Plugin>;
+pub type PluginFactory = fn() -> Box<dyn Plugin>;
 
 #[derive(Debug, Clone)]
 pub struct PluginRegistry {

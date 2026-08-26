@@ -2,7 +2,9 @@ use tracing::{debug, error};
 
 use gtk::{gio, glib, prelude::*};
 
-use crate::components::main_window::{MainWindow, MainWindowInputMessage};
+use crate::components::main_window::MainWindow;
+
+use silo_plugin::ApplicationMessage;
 
 pub fn workspace_open_action(window: &MainWindow) -> gio::SimpleAction {
     let action = gio::SimpleAction::new("workspace-open", None);
@@ -31,9 +33,7 @@ pub fn workspace_open_action(window: &MainWindow) -> gio::SimpleAction {
                         debug!("select_folder path: {:?}", path);
                         if let Some(path) = path.path() {
                             let path_string = path.to_string_lossy().into_owned();
-                            // sender.input(MainWindowMsg::WorkspaceChanged(path_string));
-                            window_clone
-                                .send(MainWindowInputMessage::WorkspaceChanged(path_string));
+                            window_clone.send(ApplicationMessage::WorkspaceChanged(path_string));
                         } else {
                             error!("select_folder path is None");
                         }

@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+tracing = "*"
+
+gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
+async-channel = "*"

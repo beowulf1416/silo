@@ -1,8 +1,10 @@
 use gtk::gio::prelude::ActionMapExt;
 
-use crate::{
-    actions::workspace_open_action::workspace_open_action, components::main_window::MainWindow,
-};
+// use crate::{
+//     actions::workspace_open_action::workspace_open_action, components::main_window::MainWindow,
+// };
+
+use crate::components::main_window::MainWindow;
 
 pub mod data_source_add;
 pub mod data_source_remove;

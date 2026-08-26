@@ -8,7 +8,8 @@ use tracing::debug;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 // use crate::components::data_sources_view::tree_node::{Node, data_source_node::DataSourceNode};
-use crate::components::data_sources_view::node::Node;
+// use crate::components::data_sources_view::node::Node;
+use silo_plugin::node::Node;
 
 // use crate::components::data_sources_view::
 

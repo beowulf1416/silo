@@ -1,0 +1,16 @@
+[package]
+name = "postgres"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tracing = "*"
+serde = "*"
+async-channel = "*"
+
+gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
+sqlx = { version = "*", features = ["postgres", "uuid", "chrono", "macros", "rust_decimal"] }
+
+
+# projects
+silo-plugin = { path = "../../libs/silo-plugin" }

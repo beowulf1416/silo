@@ -7,8 +7,10 @@ use std::rc::Rc;
 
 use gtk::{gdk, gio, glib, prelude::*, subclass::prelude::*};
 
-use crate::{APP_ID, plugins::PluginRegistry};
+use crate::APP_ID;
+// use crate::{APP_ID, plugins::PluginRegistry};
 // use silo_base::Silo;
+use silo_plugin::plugin::{Plugin, PluginRegistry};
 
 glib::wrapper! {
     pub struct App(ObjectSubclass<imp::App>)
@@ -61,12 +63,14 @@ impl App {
         debug!("init registry");
 
         let mut registry = PluginRegistry::new();
-        registry.register(
-            "postgres",
-            crate::plugins::postgres::postgres_plugin::factory,
-        );
+        // registry.register(
+        //     "postgres",
+        //     crate::plugins::postgres::postgres_plugin::factory,
+        // );
 
-        registry.register("mysql", crate::plugins::mysql::plugin::factory);
+        // registry.register("mysql", crate::plugins::mysql::plugin::factory);
+
+        registry.register("postgres", postgres::plugin::factory);
 
         debug!("registry {:?}", registry);
 

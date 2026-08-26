@@ -10,8 +10,9 @@ use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 // use crate::components::data_sources_view::gnode::GNode;
 // use crate::components::data_sources_view::tree_node::{data_source_node::DataSourceNode, *};
-use crate::components::data_sources_view::node::Node;
-use crate::plugins::postgres::nodes::data_source_node::PostgresDataSourceNode;
+// use crate::components::data_sources_view::node::Node;
+use silo_plugin::node::Node;
+// use crate::plugins::postgres::nodes::data_source_node::PostgresDataSourceNode;
 
 #[derive(Debug)]
 pub struct DataSourcesView {
