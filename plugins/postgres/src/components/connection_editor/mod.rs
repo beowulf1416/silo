@@ -30,26 +30,26 @@ impl PostgresConnectionEditor {
         imp.sender.replace(Some(sender));
     }
 
-    pub fn save_configuration(&self) {
-        debug!("save_configuration");
+    // pub fn save_configuration(&self) {
+    //     debug!("save_configuration");
 
-        let imp = self.imp();
+    //     let imp = self.imp();
 
-        let name = imp.entry_name.text().to_string();
-        let host = imp.entry_host.text().to_string();
-        let port = imp.entry_port.text().to_string();
-        let db = imp.entry_db.text().to_string();
-        let user = imp.entry_user.text().to_string();
-        let pw = imp.entry_pw.text().to_string();
+    //     let name = imp.entry_name.text().to_string();
+    //     let host = imp.entry_host.text().to_string();
+    //     let port = imp.entry_port.text().to_string();
+    //     let db = imp.entry_db.text().to_string();
+    //     let user = imp.entry_user.text().to_string();
+    //     let pw = imp.entry_pw.text().to_string();
 
-        // let config = serde_json::json!({
-        //     "name": name,
-        //     "host": host,
-        //     "port": port,
-        //     "user": user,
-        //     "pw": pw
-        // });
-    }
+    //     // let config = serde_json::json!({
+    //     //     "name": name,
+    //     //     "host": host,
+    //     //     "port": port,
+    //     //     "user": user,
+    //     //     "pw": pw
+    //     // });
+    // }
 }
 
 impl Default for PostgresConnectionEditor {

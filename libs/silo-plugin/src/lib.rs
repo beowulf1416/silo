@@ -12,6 +12,7 @@ pub enum ApplicationMessage {
     CloseRequested,
     WorkspaceChanged(WorkspacePath),
     WorkspaceSaveRequested,
+    CloseEditorRequested(Option<u32>),
     NewDataSourceRequested(PluginName),
     DataSourceAdd(Box<dyn node::Node>),
 }

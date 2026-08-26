@@ -83,6 +83,10 @@ impl MainWindow {
                     app.quit();
                 }
             }
+            ApplicationMessage::CloseEditorRequested(page) => {
+                debug!("close editor requested: {:?}", page);
+                self.imp().ev.remove_editor(page);
+            }
             ApplicationMessage::WorkspaceChanged(workspace_path) => {
                 debug!("workspace changed {}", workspace_path);
                 self.set_workspace_path(&workspace_path);
@@ -103,7 +107,11 @@ impl MainWindow {
                         plugin.build_data_source_editor_widget(self.imp().sender())
                     {
                         let imp = self.imp();
-                        imp.ev.add_editor(&plugin_name, widget);
+                        imp.ev.add_editor(
+                            &plugin_name,
+                            widget,
+                            self.imp().sender.borrow().as_ref().unwrap(),
+                        );
                     } else {
                         warn!("plugin {} does not have a data source editor", plugin_name);
                     }

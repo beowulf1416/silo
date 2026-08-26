@@ -1,19 +1,28 @@
 use tracing::{debug, error};
 
-use async_channel::Sender;
-use std::cell::Ref;
+// use async_channel::Sender;
+use std::cell::RefCell;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
-use crate::plugins::Plugin;
+// use crate::plugins::Plugin;
+use silo_plugin::ApplicationMessage;
 
 #[derive(Debug, Default)]
 pub struct EditorView {
     pub nb: gtk::Notebook,
+    pub sender: RefCell<Option<async_channel::Sender<ApplicationMessage>>>,
 }
 
 impl EditorView {
-    pub fn add_editor(&self, display_name: &str, editor: gtk::Widget) {
+    pub fn add_editor(
+        &self,
+        display_name: &str,
+        editor: gtk::Widget,
+        sender: &async_channel::Sender<ApplicationMessage>,
+    ) {
+        self.sender.replace(Some(sender.clone()));
+
         // tab header
         let icon = gtk::Image::builder()
             .icon_name("folder-visiting-symbolic")
@@ -26,9 +35,17 @@ impl EditorView {
             .icon_name("window-close-symbolic")
             .css_classes(vec!["btn", "flat"])
             .build();
-        btn_close.connect_clicked(|_button| {
-            debug!("close window requested");
-        });
+        btn_close.connect_clicked(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_button| {
+                debug!("close window requested {:?}", window.nb.current_page());
+
+                let _ = window.sender.borrow().as_ref().unwrap().send_blocking(
+                    ApplicationMessage::CloseEditorRequested(window.nb.current_page()),
+                );
+            }
+        ));
 
         let th = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
@@ -54,6 +71,12 @@ impl EditorView {
         let page_id = self.nb.append_page(&content, Some(&th));
         self.nb.set_current_page(Some(page_id));
     }
+
+    pub fn remove_editor(&self, page: Option<u32>) {
+        if let Some(page_id) = page {
+            self.nb.remove_page(Some(page_id));
+        }
+    }
 }
 
 #[glib::object_subclass]
@@ -68,6 +91,7 @@ impl ObjectImpl for EditorView {
         self.parent_constructed();
         let obj = self.obj();
 
+        /*
         // page content
         let btn_save = gtk::Button::builder()
             .icon_name("document-save-symbolic")
@@ -129,6 +153,7 @@ impl ObjectImpl for EditorView {
 
         // let nb = gtk::Notebook::builder().hexpand(true).vexpand(true).build();
         self.nb.append_page(&content, Some(&tab_container));
+        */
 
         let content_box = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)

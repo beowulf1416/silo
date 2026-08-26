@@ -2,7 +2,8 @@ mod imp;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
-use crate::plugins::Plugin;
+// use crate::plugins::Plugin;
+use silo_plugin::ApplicationMessage;
 
 glib::wrapper! {
     pub struct EditorView(ObjectSubclass<imp::EditorView>)
@@ -16,9 +17,19 @@ impl EditorView {
         glib::Object::builder().build()
     }
 
-    pub fn add_editor(&self, display_name: &str, widget: gtk::Widget) {
+    pub fn add_editor(
+        &self,
+        display_name: &str,
+        widget: gtk::Widget,
+        sender: &async_channel::Sender<ApplicationMessage>,
+    ) {
         let imp = self.imp();
-        imp.add_editor(&display_name, widget);
+        imp.add_editor(&display_name, widget, &sender);
+    }
+
+    pub fn remove_editor(&self, page: Option<u32>) {
+        let imp = self.imp();
+        imp.remove_editor(page);
     }
 }
 
