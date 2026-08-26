@@ -5,6 +5,8 @@ pub trait Node: std::fmt::Debug {
     // fn children(&self) -> gio::ListStore;
     fn clone_box(&self) -> Box<dyn Node>;
     fn children(&self) -> Option<gio::ListStore>;
+
+    fn context_menu(&self) -> Option<gio::Menu>;
 }
 
 impl Clone for Box<dyn Node> {

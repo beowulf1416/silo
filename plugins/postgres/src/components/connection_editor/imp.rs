@@ -1,17 +1,19 @@
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
-use std::cell::{Ref, RefCell};
-use std::sync::Arc;
+use std::cell::RefCell;
+// use std::sync::Arc;
 
-// use crate::components::{
-//     // data_sources_view::tree_node::data_source_node::DataSourceNode,
-//     main_window::{MainWindow, MainWindowInputMessage},
-// };
+use sqlx::PgPool;
+use sqlx::postgres::PgPoolOptions;
 
-// use crate::plugins::postgres::nodes::data_source_node::PostgresDataSourceNode;
 use crate::nodes::data_source_node::PostgresDataSourceNode;
 use silo_plugin::{ApplicationMessage, node::Node};
+
+enum TestMessage {
+    Success(String),
+    Error(String),
+}
 
 #[derive(Debug, Default)]
 pub struct PostgresConnectionEditor {
@@ -31,6 +33,8 @@ pub struct PostgresConnectionEditor {
     pub entry_user: gtk::Entry,
     pub entry_pw: gtk::PasswordEntry,
     pub entry_uri: gtk::Entry,
+
+    pub label_test: gtk::Label,
 }
 
 impl PostgresConnectionEditor {
@@ -44,26 +48,79 @@ impl PostgresConnectionEditor {
             .action_set_enabled("win.data-source-save::postgres", self.is_dirty);
     }
 
-    pub fn save_configuration(&self) {
-        debug!("save_configuration");
+    // pub fn save_configuration(&self) {
+    //     debug!("save_configuration");
 
-        // let imp = self.imp();
+    //     // let imp = self.imp();
 
-        let name = self.entry_name.text().to_string();
-        let host = self.entry_host.text().to_string();
-        let port = self.entry_port.text().to_string();
-        let db = self.entry_db.text().to_string();
-        let user = self.entry_user.text().to_string();
-        let pw = self.entry_pw.text().to_string();
+    //     let name = self.entry_name.text().to_string();
+    //     let host = self.entry_host.text().to_string();
+    //     let port = self.entry_port.text().to_string();
+    //     let db = self.entry_db.text().to_string();
+    //     let user = self.entry_user.text().to_string();
+    //     let pw = self.entry_pw.text().to_string();
 
-        // let config = serde_json::json!({
-        //     "name": name,
-        //     "db": db,
-        //     "host": host,
-        //     "port": port,
-        //     "user": user,
-        //     "pw": pw
-        // });
+    //     // let config = serde_json::json!({
+    //     //     "name": name,
+    //     //     "db": db,
+    //     //     "host": host,
+    //     //     "port": port,
+    //     //     "user": user,
+    //     //     "pw": pw
+    //     // });
+    // }
+    pub fn test_connection_details(&self, db: &str, host: &str, port: u32, user: &str, pw: &str) {
+        debug!("test_connection_details");
+
+        let (sender, receiver) = async_channel::unbounded::<String>();
+        glib::MainContext::default().spawn_local(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            async move {
+                while let Ok(msg) = receiver.recv().await {
+                    window.label_test.set_text(&msg);
+                }
+            }
+        ));
+
+        let db = db.to_string();
+        let host = host.to_string();
+        // let port = port;
+        let user = user.to_string();
+        let pw = pw.to_string();
+
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async move {
+                match attempt_connection(&db, &host, port, &user, &pw).await {
+                    Err(e) => {
+                        let _ = sender.send(format!("{}", e)).await;
+                    }
+                    Ok(_) => {
+                        let _ = sender
+                            .send("Successfully connected to database".to_string())
+                            .await;
+                    }
+                }
+            });
+        });
+    }
+}
+
+async fn attempt_connection(
+    db: &String,
+    host: &String,
+    port: u32,
+    user: &String,
+    pw: &String,
+) -> Result<(), sqlx::Error> {
+    let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
+    match PgPoolOptions::new().max_connections(1).connect(&uri).await {
+        Err(e) => {
+            error!("unable to connect to database: {} [{uri}]", e);
+            Err(e)
+        }
+        Ok(_) => Ok(()),
     }
 }
 
@@ -146,8 +203,6 @@ impl ObjectImpl for PostgresConnectionEditor {
             #[weak(rename_to = editor)]
             self,
             move |_button| {
-                debug!("//todo save button clicked");
-
                 let boxed: Box<dyn Node> = Box::new(PostgresDataSourceNode::new(
                     editor.entry_name.text().as_str(),
                 ));
@@ -163,9 +218,20 @@ impl ObjectImpl for PostgresConnectionEditor {
 
         self.btn_test.set_icon_name("connect");
         self.btn_test.set_tooltip_text(Some("Test connection"));
-        self.btn_test.connect_clicked(|_button| {
-            debug!("//todo test button clicked");
-        });
+        self.btn_test.connect_clicked(glib::clone!(
+            #[weak(rename_to = editor)]
+            self,
+            move |_button| {
+                debug!("//todo test button clicked");
+                editor.test_connection_details(
+                    editor.entry_db.text().as_str(),
+                    editor.entry_host.text().as_str(),
+                    editor.entry_port.value() as u32,
+                    editor.entry_user.text().as_str(),
+                    editor.entry_pw.text().as_str(),
+                );
+            }
+        ));
 
         let bar = gtk::ActionBar::builder().hexpand(true).build();
         bar.pack_start(&self.btn_save);
@@ -239,6 +305,13 @@ impl ObjectImpl for PostgresConnectionEditor {
 
         grid.attach(&label_uri, 0, 6, 1, 1);
         grid.attach(&self.entry_uri, 1, 6, 1, 1);
+
+        // row 7
+        self.label_test.set_halign(gtk::Align::Start);
+        self.label_test.set_hexpand(true);
+        self.label_test.set_vexpand(true);
+        self.label_test.set_wrap(true);
+        grid.attach(&self.label_test, 0, 7, 2, 2);
 
         let container = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)

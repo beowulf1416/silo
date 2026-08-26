@@ -9,7 +9,9 @@ serde = "*"
 async-channel = "*"
 
 gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
-sqlx = { version = "*", features = ["postgres", "uuid", "chrono", "macros"] }
+tokio = { version = "*", features = ["full"] }
+sqlx = { version = "*", features = ["postgres", "uuid", "chrono", "macros", "runtime-tokio", "tls-rustls"] }
+
 
 
 # projects
