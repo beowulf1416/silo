@@ -1,7 +1,7 @@
 pub mod connection_editor;
 pub mod query_editor;
 // mod imp;
-pub mod node;
+pub mod nodes;
 pub mod postgres_plugin;
 
 use tracing::debug;
