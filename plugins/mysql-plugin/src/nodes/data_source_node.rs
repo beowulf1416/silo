@@ -53,4 +53,23 @@ impl Node for MySQLDataSourceNode {
 
         return Some(store);
     }
+
+    fn context_menu(&self) -> Option<gio::Menu> {
+        let menu = gio::Menu::new();
+
+        let item = gio::MenuItem::new(Some("Edit"), Some("win.data-source-edit::mysql"));
+        menu.append_item(&item);
+
+        let item = gio::MenuItem::new(Some("Refresh"), Some("win.data-source-refresh::mysql"));
+        let section = gio::Menu::new();
+        section.append_item(&item);
+        menu.append_section(None, &section);
+
+        let item = gio::MenuItem::new(Some("Remove"), Some("win.data-source-remove::mysql"));
+        let section = gio::Menu::new();
+        section.append_item(&item);
+        menu.append_section(None, &section);
+
+        return Some(menu);
+    }
 }

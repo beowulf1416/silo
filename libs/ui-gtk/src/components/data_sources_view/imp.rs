@@ -118,6 +118,7 @@ impl DataSourcesView {
 
         self.tv.set_model(Some(&selection));
         self.tv.append_column(&self.build_name_column());
+        self.tv.append_column(&self.build_menu_column());
 
         let sw = gtk::ScrolledWindow::builder()
             .hexpand(true)
@@ -186,11 +187,65 @@ impl DataSourcesView {
 
             let node_ref: Ref<Box<dyn Node>> = obj.borrow::<Box<dyn Node>>();
             let node: &dyn Node = node_ref.as_ref();
+
             label.set_label(&node.name());
+            // if let Some(menu) = node.context_menu() {
+            //     label.set_extra_menu(Some(&menu));
+            // }
         });
 
         let column = gtk::ColumnViewColumn::new(Some("Name"), Some(factory));
         column.set_expand(true);
+        return column;
+    }
+
+    fn build_menu_column(&self) -> gtk::ColumnViewColumn {
+        let factory = gtk::SignalListItemFactory::new();
+        factory.connect_setup(|_factory, item| {
+            let litem = item.downcast_ref::<gtk::ListItem>().unwrap();
+
+            let button = gtk::MenuButton::builder()
+                .icon_name("ellipsis_vertical")
+                .tooltip_text("Actions")
+                .css_classes(vec!["btn", "flat"])
+                .build();
+
+            litem.set_child(Some(&button));
+        });
+
+        factory.connect_bind(|_factory, item| {
+            let litem = item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("expecting gtk::ListItem");
+
+            let row = litem
+                .item()
+                .and_downcast::<gtk::TreeListRow>()
+                .expect("expecting gtk::TreeListRow");
+
+            let button = litem
+                .child()
+                .and_downcast::<gtk::MenuButton>()
+                .expect("expecting gtk::MenuButton");
+
+            let obj = row
+                .item()
+                .and_downcast::<glib::BoxedAnyObject>()
+                .expect("expecting BoxedAnyObject");
+
+            let node_ref: Ref<Box<dyn Node>> = obj.borrow::<Box<dyn Node>>();
+            let node: &dyn Node = node_ref.as_ref();
+
+            if let Some(menu) = node.context_menu() {
+                let pop_menu = gtk::PopoverMenu::from_model(Some(&menu));
+                button.set_popover(Some(&pop_menu));
+            } else {
+                button.set_active(false);
+            }
+        });
+
+        let column = gtk::ColumnViewColumn::new(None, Some(factory));
+        column.set_expand(false);
         return column;
     }
 

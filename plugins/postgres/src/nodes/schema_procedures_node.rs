@@ -22,4 +22,13 @@ impl Node for SchemaProceduresNode {
 
         return None;
     }
+
+    fn context_menu(&self) -> Option<gio::Menu> {
+        let menu = gio::Menu::new();
+
+        let item = gio::MenuItem::new(Some("Refresh"), Some("win.data-source-refresh::postgres"));
+        menu.append_item(&item);
+
+        return Some(menu);
+    }
 }

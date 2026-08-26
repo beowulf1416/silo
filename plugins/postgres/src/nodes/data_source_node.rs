@@ -7,9 +7,6 @@ use gtk::{
     subclass::prelude::*,
 };
 
-// use crate::{
-//     components::data_sources_view::node::Node, plugins::postgres::nodes::schema_node::SchemaNode,
-// };
 use crate::nodes::schema_node::SchemaNode;
 use silo_plugin::node::Node;
 
@@ -50,5 +47,24 @@ impl Node for PostgresDataSourceNode {
         store.append(&glib::BoxedAnyObject::new(boxed));
 
         return Some(store);
+    }
+
+    fn context_menu(&self) -> Option<gio::Menu> {
+        let menu = gio::Menu::new();
+
+        let item = gio::MenuItem::new(Some("Edit"), Some("win.data-source-edit::postgres"));
+        menu.append_item(&item);
+
+        let item = gio::MenuItem::new(Some("Refresh"), Some("win.data-source-refresh::postgres"));
+        let section = gio::Menu::new();
+        section.append_item(&item);
+        menu.append_section(None, &section);
+
+        let item = gio::MenuItem::new(Some("Remove"), Some("win.data-source-remove::postgres"));
+        let section = gio::Menu::new();
+        section.append_item(&item);
+        menu.append_section(None, &section);
+
+        return Some(menu);
     }
 }
