@@ -7,6 +7,7 @@ use std::cell::RefCell;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 
+use crate::nodes::ConnectionSettings;
 use crate::nodes::data_source_node::PostgresDataSourceNode;
 use silo_plugin::{ApplicationMessage, node::Node};
 
@@ -48,27 +49,6 @@ impl PostgresConnectionEditor {
             .action_set_enabled("win.data-source-save::postgres", self.is_dirty);
     }
 
-    // pub fn save_configuration(&self) {
-    //     debug!("save_configuration");
-
-    //     // let imp = self.imp();
-
-    //     let name = self.entry_name.text().to_string();
-    //     let host = self.entry_host.text().to_string();
-    //     let port = self.entry_port.text().to_string();
-    //     let db = self.entry_db.text().to_string();
-    //     let user = self.entry_user.text().to_string();
-    //     let pw = self.entry_pw.text().to_string();
-
-    //     // let config = serde_json::json!({
-    //     //     "name": name,
-    //     //     "db": db,
-    //     //     "host": host,
-    //     //     "port": port,
-    //     //     "user": user,
-    //     //     "pw": pw
-    //     // });
-    // }
     pub fn test_connection_details(&self, db: &str, host: &str, port: u32, user: &str, pw: &str) {
         debug!("test_connection_details");
 
@@ -205,6 +185,13 @@ impl ObjectImpl for PostgresConnectionEditor {
             move |_button| {
                 let boxed: Box<dyn Node> = Box::new(PostgresDataSourceNode::new(
                     editor.entry_name.text().as_str(),
+                    ConnectionSettings {
+                        name: editor.entry_db.text().to_string(),
+                        host: editor.entry_host.text().to_string(),
+                        port: editor.entry_port.value() as u32,
+                        user: editor.entry_user.text().to_string(),
+                        pw: editor.entry_pw.text().to_string(),
+                    },
                 ));
                 let _ = editor
                     .sender

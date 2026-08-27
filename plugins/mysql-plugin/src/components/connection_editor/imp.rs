@@ -3,6 +3,7 @@ use tracing::{debug, error};
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use std::cell::{Ref, RefCell};
 
+use crate::nodes::ConnectionSettings;
 use crate::nodes::data_source_node::MySQLDataSourceNode;
 use silo_plugin::{ApplicationMessage, node::Node};
 
@@ -115,8 +116,16 @@ impl ObjectImpl for MySQLConnectionEditor {
             move |_button| {
                 debug!("//todo save button clicked");
 
-                let boxed: Box<dyn Node> =
-                    Box::new(MySQLDataSourceNode::new(editor.entry_name.text().as_str()));
+                let boxed: Box<dyn Node> = Box::new(MySQLDataSourceNode::new(
+                    editor.entry_name.text().as_str(),
+                    ConnectionSettings {
+                        host: editor.entry_host.text().to_string(),
+                        port: editor.entry_port.value() as u32,
+                        user: editor.entry_user.text().to_string(),
+                        pw: editor.entry_pw.text().to_string(),
+                        name: editor.entry_db.text().to_string(),
+                    },
+                ));
                 let _ = editor
                     .sender
                     .borrow()

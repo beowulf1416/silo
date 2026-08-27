@@ -73,7 +73,7 @@ impl PostgresQueryEditor {
         view.set_background_pattern(sourceview5::BackgroundPatternType::Grid);
         view.set_show_line_numbers(true);
         view.set_highlight_current_line(true);
-        view.set_highlight_matching_brackets(true);
+        // view.set_highlight_matching_brackets(true);
         view.set_tab_width(4);
         view.set_hexpand(true);
         view.set_vexpand(true);

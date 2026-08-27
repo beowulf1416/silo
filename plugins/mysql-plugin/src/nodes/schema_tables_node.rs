@@ -1,21 +1,21 @@
+use gtk::{gio, glib, prelude::*, subclass::prelude::*};
+use std::sync::Arc;
 use tracing::debug;
 
-use gtk::{gio, glib, prelude::*, subclass::prelude::*};
-
 // use crate::components::data_sources_view::node::Node;
+use crate::nodes::ConnectionSettings;
 use silo_plugin::node::Node;
 
 #[derive(Debug, Clone)]
 pub struct SchemaTablesNode {
     // pub name: String,
+    settings: Arc<ConnectionSettings>,
 }
 
 impl SchemaTablesNode {
-    // pub fn new(name: &str) -> Self {
-    //     return Self {
-    //         name: name.to_string(),
-    //     };
-    // }
+    pub fn new(settings: Arc<ConnectionSettings>) -> Self {
+        return Self { settings };
+    }
 }
 
 impl Node for SchemaTablesNode {
@@ -27,7 +27,7 @@ impl Node for SchemaTablesNode {
         return Box::new(self.clone());
     }
 
-    fn children(&self) -> Option<gio::ListStore> {
+    fn children(&self) -> Option<Vec<Box<dyn Node>>> {
         debug!("SchemaTableNode::children");
 
         return None;

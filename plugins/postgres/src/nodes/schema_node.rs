@@ -1,26 +1,27 @@
 use tracing::debug;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
+use std::sync::Arc;
 
-// use crate::components::data_sources_view::node::Node;
-// use crate::plugins::postgres::nodes::schema_functions_node::SchemaFunctionsNode;
-// use crate::plugins::postgres::nodes::schema_procedures_node::SchemaProceduresNode;
-// use crate::plugins::postgres::nodes::schema_tables_node::SchemaTablesNode;
+use silo_plugin::node::Node;
 
+use crate::nodes::ConnectionSettings;
 use crate::nodes::schema_functions_node::SchemaFunctionsNode;
 use crate::nodes::schema_procedures_node::SchemaProceduresNode;
 use crate::nodes::schema_tables_node::SchemaTablesNode;
-use silo_plugin::node::Node;
 
 #[derive(Debug, Clone)]
 pub struct SchemaNode {
     pub name: String,
+
+    pub settings: Arc<ConnectionSettings>,
 }
 
 impl SchemaNode {
-    pub fn new(name: &str) -> Self {
+    pub fn new(name: &str, settings: Arc<ConnectionSettings>) -> Self {
         return Self {
             name: name.to_string(),
+            settings,
         };
     }
 }
@@ -34,21 +35,21 @@ impl Node for SchemaNode {
         return Box::new(self.clone());
     }
 
-    fn children(&self) -> Option<gio::ListStore> {
+    fn children(&self) -> Option<Vec<Box<dyn Node>>> {
         debug!("SchemaNode::children");
 
-        let store = gio::ListStore::new::<glib::BoxedAnyObject>();
+        let mut nodes: Vec<Box<dyn Node>> = vec![];
 
-        let boxed: Box<dyn Node> = Box::new(SchemaTablesNode {});
-        store.append(&glib::BoxedAnyObject::new(boxed));
+        let boxed: Box<dyn Node> = Box::new(SchemaTablesNode::new(Arc::clone(&self.settings)));
+        nodes.push(boxed);
 
-        let boxed: Box<dyn Node> = Box::new(SchemaProceduresNode {});
-        store.append(&glib::BoxedAnyObject::new(boxed));
+        let boxed: Box<dyn Node> = Box::new(SchemaProceduresNode::new(Arc::clone(&self.settings)));
+        nodes.push(boxed);
 
-        let boxed: Box<dyn Node> = Box::new(SchemaFunctionsNode {});
-        store.append(&glib::BoxedAnyObject::new(boxed));
+        let boxed: Box<dyn Node> = Box::new(SchemaFunctionsNode::new(Arc::clone(&self.settings)));
+        nodes.push(boxed);
 
-        return Some(store);
+        return Some(nodes);
     }
 
     fn context_menu(&self) -> Option<gio::Menu> {
