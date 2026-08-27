@@ -146,7 +146,9 @@ impl DataSourcesView {
         // }
 
         let store = gio::ListStore::new::<glib::BoxedAnyObject>();
-        store.append(&glib::BoxedAnyObject::new(Box::new(LoadingNode {})));
+
+        let boxed: Box<dyn Node> = Box::new(LoadingNode {});
+        store.append(&glib::BoxedAnyObject::new(boxed));
 
         let store_clone = store.clone();
         let obj_clone = obj.clone();
@@ -164,7 +166,7 @@ impl DataSourcesView {
                 Some(children) => {
                     store_clone.remove_all();
                     for child in children {
-                        store_clone.append(&glib::BoxedAnyObject::new(Box::new(child)));
+                        store_clone.append(&glib::BoxedAnyObject::new(child));
                     }
                 }
             }
