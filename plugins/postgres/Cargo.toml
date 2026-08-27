@@ -9,8 +9,11 @@ serde = "*"
 async-channel = "*"
 
 gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
+sourceview5 = "*"
+
 tokio = { version = "*", features = ["full"] }
 sqlx = { version = "*", features = ["postgres", "uuid", "chrono", "macros", "runtime-tokio", "tls-rustls"] }
+
 
 
 

@@ -7,6 +7,7 @@ use gtk::gio::prelude::ActionMapExt;
 use crate::components::main_window::MainWindow;
 
 pub mod data_source_add;
+pub mod data_source_new_query;
 pub mod data_source_remove;
 pub mod quit;
 pub mod workspace_open_action;
@@ -26,5 +27,8 @@ pub fn setup_actions(window: &MainWindow) {
     window.add_action(&action);
 
     let action = workspace_save_action::workspace_save_action(&window);
+    window.add_action(&action);
+
+    let action = data_source_new_query::data_source_new_query_action(&window);
     window.add_action(&action);
 }

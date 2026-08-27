@@ -125,6 +125,24 @@ impl MainWindow {
                 let imp = self.imp();
                 imp.dsv.data_source_add(box_node);
             }
+            ApplicationMessage::NewQueryEditorRequested(plugin_name) => {
+                if let Some(plugin) = self.app().registry().create_plugin(&plugin_name) {
+                    debug!("plugin {:?}", plugin);
+
+                    if let Some(widget) = plugin.build_query_editor_widget(self.imp().sender()) {
+                        let imp = self.imp();
+                        imp.ev.add_editor(
+                            &plugin_name,
+                            widget,
+                            self.imp().sender.borrow().as_ref().unwrap(),
+                        );
+                    } else {
+                        warn!("plugin {} does not have a query editor", plugin_name);
+                    }
+                } else {
+                    error!("unable to find plugin {}", plugin_name);
+                }
+            }
         }
     }
 

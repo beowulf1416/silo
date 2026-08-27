@@ -58,6 +58,14 @@ impl Node for PostgresDataSourceNode {
         let item = gio::MenuItem::new(Some("Refresh"), Some("win.data-source-refresh::postgres"));
         let section = gio::Menu::new();
         section.append_item(&item);
+
+        let item = gio::MenuItem::new(
+            Some("New Query"),
+            Some("win.data-source-new-query::postgres"),
+        );
+        let section = gio::Menu::new();
+        section.append_item(&item);
+
         menu.append_section(None, &section);
 
         let item = gio::MenuItem::new(Some("Remove"), Some("win.data-source-remove::postgres"));
