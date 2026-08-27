@@ -44,3 +44,24 @@ impl Default for DataSourcesView {
         return Self::new();
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct LoadingNode {}
+
+impl Node for LoadingNode {
+    fn name(&self) -> &str {
+        return "Loading...";
+    }
+
+    fn children(&self) -> Option<Vec<Box<dyn Node>>> {
+        return None;
+    }
+
+    fn context_menu(&self) -> Option<gio::Menu> {
+        return None;
+    }
+
+    fn clone_box(&self) -> Box<dyn Node> {
+        return Box::new(self.clone());
+    }
+}

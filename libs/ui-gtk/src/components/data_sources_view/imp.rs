@@ -8,11 +8,10 @@ use tracing_subscriber::field::debug;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
-// use crate::components::data_sources_view::gnode::GNode;
-// use crate::components::data_sources_view::tree_node::{data_source_node::DataSourceNode, *};
-// use crate::components::data_sources_view::node::Node;
+use crate::components::data_sources_view::LoadingNode;
+// use crate::lib::get_runtime;
+
 use silo_plugin::node::Node;
-// use crate::plugins::postgres::nodes::data_source_node::PostgresDataSourceNode;
 
 #[derive(Debug)]
 pub struct DataSourcesView {
@@ -112,6 +111,12 @@ impl DataSourcesView {
                 .downcast_ref::<glib::BoxedAnyObject>()
                 .expect("//todo BoxedAnyObject");
             return Self::create_child_model(&node);
+
+            // let store = gio::ListStore::new();
+
+            // store.append(&glib::BoxedAnyObject::new(Box::new(LoadingNode {})));
+
+            // return Some(store.upcast());
         });
 
         let selection = gtk::SingleSelection::builder().model(&model).build();
@@ -131,14 +136,41 @@ impl DataSourcesView {
     }
 
     fn create_child_model(obj: &glib::BoxedAnyObject) -> Option<gio::ListModel> {
-        let node_ref: Ref<Box<dyn Node>> = obj.borrow::<Box<dyn Node>>();
-        let node: &dyn Node = node_ref.as_ref();
+        // let node_ref: Ref<Box<dyn Node>> = obj.borrow::<Box<dyn Node>>();
+        // let node: &dyn Node = node_ref.as_ref();
 
-        if let Some(store) = node.children() {
-            return Some(store.upcast());
-        } else {
-            return None;
-        }
+        // if let Some(store) = node.children() {
+        //     return Some(store.upcast());
+        // } else {
+        //     return None;
+        // }
+
+        let store = gio::ListStore::new::<glib::BoxedAnyObject>();
+        store.append(&glib::BoxedAnyObject::new(Box::new(LoadingNode {})));
+
+        let store_clone = store.clone();
+        let obj_clone = obj.clone();
+        // let node_clone = node.clone();
+
+        let main_context = glib::MainContext::default();
+        main_context.spawn_local(async move {
+            let node_ref: Ref<Box<dyn Node>> = obj_clone.borrow::<Box<dyn Node>>();
+            let node: &dyn Node = node_ref.as_ref();
+
+            match node.children() {
+                None => {
+                    store_clone.remove_all();
+                }
+                Some(children) => {
+                    store_clone.remove_all();
+                    for child in children {
+                        store_clone.append(&glib::BoxedAnyObject::new(Box::new(child)));
+                    }
+                }
+            }
+        });
+
+        return Some(store.upcast());
     }
 
     pub fn build_name_column(&self) -> gtk::ColumnViewColumn {
