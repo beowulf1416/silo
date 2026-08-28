@@ -13,24 +13,42 @@ use crate::components::data_sources_view::LoadingNode;
 
 use silo_plugin::node::Node;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DataSourcesView {
-    pub store: gio::ListStore,
+    pub(super) store: RefCell<Option<gio::ListStore>>,
     pub tv: gtk::ColumnView,
     // pub sources: Vec<Arc<data_source_node::DataSourceNode>>,
 }
 
 impl DataSourcesView {
-    pub fn new() -> Self {
-        return Self {
-            // store: gio::ListStore::new::<TreeNode>(),
-            store: gio::ListStore::new::<glib::BoxedAnyObject>(),
-            // sources: vec![],
-            tv: gtk::ColumnView::builder()
-                .hexpand(true)
-                .vexpand(true)
-                .build(),
-        };
+    // pub fn new(sources: gio::ListStore) -> Self {
+    //     return Self {
+    //         // store: gio::ListStore::new::<glib::BoxedAnyObject>(),
+    //         store: sources,
+    //         tv: gtk::ColumnView::builder()
+    //             .hexpand(true)
+    //             .vexpand(true)
+    //             .build(),
+    //     };
+    // }
+
+    // pub fn sources(&self) -> gio::ListStore {
+    //     return self.store.clone();
+    // }
+
+    pub fn set_model(&self, sources: gio::ListStore) {
+        self.store.replace(Some(sources.clone()));
+
+        let model = gtk::TreeListModel::new(sources.clone(), false, false, |obj| {
+            let node = obj
+                .downcast_ref::<glib::BoxedAnyObject>()
+                .expect("//todo BoxedAnyObject");
+            return Self::create_child_model(&node);
+        });
+
+        let selection = gtk::SingleSelection::builder().model(&model).build();
+
+        self.tv.set_model(Some(&selection));
     }
 
     fn build_menu(&self) -> gio::Menu {
@@ -106,7 +124,9 @@ impl DataSourcesView {
         // let boxed: Box<dyn Node> = Box::new(PostgresDataSourceNode::new("testing"));
         // self.store.append(&glib::BoxedAnyObject::new(boxed));
 
-        let model = gtk::TreeListModel::new(self.store.clone(), false, false, |obj| {
+        //todo
+        let store = gio::ListStore::new::<glib::BoxedAnyObject>();
+        let model = gtk::TreeListModel::new(store, false, false, |obj| {
             let node = obj
                 .downcast_ref::<glib::BoxedAnyObject>()
                 .expect("//todo BoxedAnyObject");
@@ -283,17 +303,17 @@ impl DataSourcesView {
         return column;
     }
 
-    pub fn data_source_add(&self, node: Box<dyn Node>) {
-        debug!("data_source_add {:?}", node);
-        self.store.append(&glib::BoxedAnyObject::new(node));
-    }
+    // pub fn data_source_add(&self, node: Box<dyn Node>) {
+    //     debug!("data_source_add {:?}", node);
+    //     self.store.append(&glib::BoxedAnyObject::new(node));
+    // }
 }
 
-impl Default for DataSourcesView {
-    fn default() -> Self {
-        return Self::new();
-    }
-}
+// impl Default for DataSourcesView {
+//     fn default() -> Self {
+//         return Self::new();
+//     }
+// }
 
 #[glib::object_subclass]
 impl ObjectSubclass for DataSourcesView {

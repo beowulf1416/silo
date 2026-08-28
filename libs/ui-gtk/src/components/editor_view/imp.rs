@@ -57,6 +57,8 @@ impl EditorView {
 
         // content
         // let widget = plugin.build_widget();
+        editor.set_hexpand(true);
+        editor.set_vexpand(true);
 
         let content = gtk::Box::builder()
             .hexpand(true)

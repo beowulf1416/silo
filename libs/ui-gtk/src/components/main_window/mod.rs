@@ -4,15 +4,17 @@ use async_channel::Receiver;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use tracing::{debug, error, warn};
 
+use std::borrow::BorrowMut;
+
 use serde_json::Value;
 use std::sync::Arc;
 
 use crate::App;
-// use crate::components::data_sources_view::node::Node;
-// use crate::components::data_source_view::node::SimpleNode;
-// use crate::components::data_sources_view::tree_node::data_source_node::DataSourceNode;
-use crate::plugins::Plugin;
+
 use silo_plugin::ApplicationMessage;
+use silo_plugin::node::Node;
+
+use crate::components;
 
 // type PluginFactory = fn() -> Box<dyn Plugin>;
 type PluginName = String;
@@ -61,6 +63,20 @@ impl MainWindow {
             .as_ref()
             .expect("expecting App struct")
             .clone();
+    }
+
+    fn data_sources(&self) -> gio::ListStore {
+        let imp = self.imp();
+        let mut sg = imp.data_sources.borrow_mut();
+
+        return sg
+            .get_or_insert_with(|| gio::ListStore::new::<glib::BoxedAnyObject>())
+            .clone();
+    }
+
+    pub fn data_source_add(&self, dsn: Box<dyn Node>) {
+        let sources = self.data_sources();
+        sources.append(&glib::BoxedAnyObject::new(dsn));
     }
 
     pub fn start_receiver(&self, receiver: Receiver<ApplicationMessage>) {
@@ -122,26 +138,44 @@ impl MainWindow {
             ApplicationMessage::DataSourceAdd(box_node) => {
                 debug!("DataSourceAdd {:?}", box_node);
 
-                let imp = self.imp();
-                imp.dsv.data_source_add(box_node);
+                // let imp = self.imp();
+                // // imp.dsv.data_source_add(box_node);
+                // imp.data_source_add(box_node);
+                self.data_source_add(box_node);
             }
             ApplicationMessage::NewQueryEditorRequested(plugin_name) => {
-                if let Some(plugin) = self.app().registry().create_plugin(&plugin_name) {
-                    debug!("plugin {:?}", plugin);
+                // if let Some(plugin) = self.app().registry().create_plugin(&plugin_name) {
+                //     debug!("plugin {:?}", plugin);
 
-                    if let Some(widget) = plugin.build_query_editor_widget(self.imp().sender()) {
-                        let imp = self.imp();
-                        imp.ev.add_editor(
-                            &plugin_name,
-                            widget,
-                            self.imp().sender.borrow().as_ref().unwrap(),
-                        );
-                    } else {
-                        warn!("plugin {} does not have a query editor", plugin_name);
-                    }
-                } else {
-                    error!("unable to find plugin {}", plugin_name);
-                }
+                //     if let Some(widget) = plugin.build_query_editor_widget(self.imp().sender()) {
+                //         let imp = self.imp();
+                //         imp.ev.add_editor(
+                //             &plugin_name,
+                //             widget,
+                //             self.imp().sender.borrow().as_ref().unwrap(),
+                //         );
+                //     } else {
+                //         warn!("plugin {} does not have a query editor", plugin_name);
+                //     }
+                // } else {
+                //     error!("unable to find plugin {}", plugin_name);
+                // }
+
+                let imp = self.imp();
+
+                let editor =
+                    components::query_editor::QueryEditor::with_model(&self.data_sources());
+
+                // let ds = self.data_sources();
+                // debug!("data sources {:?}", ds);
+
+                // editor.set_data_sources(self.data_sources());
+
+                imp.ev.add_editor(
+                    "test",
+                    editor.upcast(),
+                    self.imp().sender.borrow().as_ref().unwrap(),
+                );
             }
         }
     }

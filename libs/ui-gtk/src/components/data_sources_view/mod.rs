@@ -29,14 +29,27 @@ impl DataSourcesView {
         return window;
     }
 
+    pub fn with_model(sources: &gio::ListStore) -> Self {
+        let obj: Self = glib::Object::builder().build();
+        let imp = obj.imp();
+        imp.set_model(sources.clone());
+
+        return obj;
+    }
+
     // pub fn data_source_add(&self, node: DataSourceNode) {
     //     let imp = self.imp();
     //     imp.data_source_add(node);
     // }
-    pub fn data_source_add(&self, node: Box<dyn Node>) {
-        let imp = self.imp();
-        imp.data_source_add(node);
-    }
+    // pub fn data_source_add(&self, node: Box<dyn Node>) {
+    //     let imp = self.imp();
+    //     imp.data_source_add(node);
+    // }
+
+    // pub fn sources(&self) -> gio::ListStore {
+    //     let imp = self.imp();
+    //     return imp.sources();
+    // }
 }
 
 impl Default for DataSourcesView {

@@ -1,9 +1,10 @@
 use tracing::{debug, error};
 
-use async_channel::Sender;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
+// use async_channel::Sender;
+use std::cell::{OnceCell, RefCell};
+// use std::collections::HashMap;
+// use std::rc::Rc;
+use std::sync::Arc;
 
 use gtk::{
     gio,
@@ -15,6 +16,7 @@ use gtk::{
 
 // use super::MainWindowInputMessage;
 use silo_plugin::ApplicationMessage;
+use silo_plugin::node::Node;
 
 use crate::{
     APP_TITLE,
@@ -36,15 +38,18 @@ use crate::{
 #[derive(Debug, Default)]
 pub struct MainWindow {
     pub sender: RefCell<Option<async_channel::Sender<ApplicationMessage>>>,
+
     pub header_bar: Header,
     // pub pane: gtk::Paned,
     // pub dsv: DataSourceView,
-    pub dsv: DataSourcesView,
+    pub dsv: RefCell<Option<DataSourcesView>>,
     pub ev: EditorView,
 
     // pub plugins: HashMap<String, Box<dyn Plugin>>,
     // pub registry: Rc<PluginRegistry>,
     pub app: RefCell<Option<App>>,
+
+    pub data_sources: RefCell<Option<gio::ListStore>>,
 }
 
 impl MainWindow {
@@ -104,19 +109,32 @@ impl MainWindow {
     //         let _ = sender.send_blocking(msg);
     //     }
     // }
-}
 
-// impl Default for MainWindow {
-//     fn default() -> Self {
-//         return Self {
-//             sender: RefCell::default(),
-//             header_bar: Header::default(),
-//             dsv: DataSourceView::default(),
-//             ev: EditorView::default(),
-//             plugins: HashMap::new(),
-//         };
-//     }
-// }
+    // pub fn data_source_add(&self, dsn: Box<dyn Node>) {
+    //     // self.dsv.data_source_add(dsn);
+    //     //
+    //     let sources = self.data_sources();
+    //     sources.append(&glib::BoxedAnyObject::new(dsn));
+    // }
+
+    // pub fn data_sources(&self) -> gio::ListStore {
+
+    //     return self.dsv.sources();
+    // }
+    //
+
+    fn data_sources(&self) -> gio::ListStore {
+        let mut sg = self.data_sources.borrow_mut();
+        return sg
+            .get_or_insert_with(|| gio::ListStore::new::<glib::BoxedAnyObject>())
+            .clone();
+    }
+
+    fn build_dsv(&self) -> DataSourcesView {
+        let dsv = DataSourcesView::with_model(&self.data_sources());
+        return dsv;
+    }
+}
 
 #[glib::object_subclass]
 impl ObjectSubclass for MainWindow {
@@ -166,7 +184,10 @@ impl ObjectImpl for MainWindow {
             .build();
         content_box.append(&paned);
 
-        paned.set_start_child(Some(&self.dsv));
+        let dsv = self.build_dsv();
+        self.dsv.replace(Some(dsv.clone()));
+
+        paned.set_start_child(Some(&dsv.clone()));
         paned.set_end_child(Some(&self.ev));
 
         // status bar
