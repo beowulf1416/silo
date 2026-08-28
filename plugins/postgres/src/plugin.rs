@@ -4,7 +4,8 @@ use silo_plugin::ApplicationMessage;
 use silo_plugin::plugin::Plugin;
 
 use crate::components::{
-    connection_editor::PostgresConnectionEditor, query_editor::PostgresQueryEditor,
+    connection_editor::PostgresConnectionEditor,
+    // query_editor::PostgresQueryEditor,
 };
 
 pub fn factory() -> Box<dyn Plugin> {
@@ -36,12 +37,17 @@ impl Plugin for PostgresPlugin {
         return Some(editor.upcast());
     }
 
-    fn build_query_editor_widget(
-        &self,
-        sender: async_channel::Sender<ApplicationMessage>,
-    ) -> Option<gtk::Widget> {
-        let editor = PostgresQueryEditor::default();
-        editor.set_sender(sender);
-        return Some(editor.upcast());
-    }
+    // fn build_query_editor_widget(
+    //     &self,
+    //     sender: async_channel::Sender<ApplicationMessage>,
+    // ) -> Option<gtk::Widget> {
+    //     let editor = PostgresQueryEditor::default();
+    //     editor.set_sender(sender);
+    //     return Some(editor.upcast());
+    // }
+    //
+
+    // fn get_pool(&self) -> Result<sqlx::Pool, &'static str> {
+    //     return Err("//todo get_pool");
+    // }
 }

@@ -1,17 +1,11 @@
-// pub mod gnode;
 mod imp;
-// pub mod node;
-// pub mod tree_node;
 
+use async_trait::async_trait;
 use tracing::debug;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
-// use crate::components::data_sources_view::tree_node::{Node, data_source_node::DataSourceNode};
-// use crate::components::data_sources_view::node::Node;
 use silo_plugin::node::Node;
-
-// use crate::components::data_sources_view::
 
 glib::wrapper! {
     pub struct DataSourcesView(ObjectSubclass<imp::DataSourcesView>)
@@ -61,6 +55,7 @@ impl Default for DataSourcesView {
 #[derive(Debug, Clone)]
 pub struct LoadingNode {}
 
+#[async_trait]
 impl Node for LoadingNode {
     fn name(&self) -> &str {
         return "Loading...";
@@ -70,6 +65,10 @@ impl Node for LoadingNode {
         return None;
     }
 
+    async fn children_async(&self) -> Result<Option<Vec<Box<dyn Node>>>, &'static str> {
+        return Err("//todo not implemented");
+    }
+
     fn context_menu(&self) -> Option<gio::Menu> {
         return None;
     }
@@ -77,4 +76,8 @@ impl Node for LoadingNode {
     fn clone_box(&self) -> Box<dyn Node> {
         return Box::new(self.clone());
     }
+
+    // fn as_any(&self) -> &dyn std::any::Any {
+    //     return self;
+    // }
 }

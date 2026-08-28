@@ -8,7 +8,7 @@ use sourceview5::prelude::*;
 
 // use crate::components::main_window::MainWindow;
 use silo_plugin::ApplicationMessage;
-use silo_plugin::node::Node;
+use silo_plugin::node::{DataSourceNode, Node};
 
 #[derive(Debug, Default)]
 pub struct QueryEditor {
@@ -25,31 +25,13 @@ impl QueryEditor {
     // }
 
     pub fn set_model(&self, sources: gio::ListStore) {
-        // self.sources.replace(Some(sources.clone()));
-
         self.cbo_sources.set_model(Some(&sources.clone()))
     }
 
     fn build_sources_drop_down(&self) {
-        // let sources_borrow = self.sources.borrow();
-        // let model = sources_borrow.as_ref().clone().unwrap();
-
-        // let cbo = gtk::DropDown::builder()
-        //     .enable_search(false)
-        //     .show_arrow(true)
-        //     // .model(&model.clone().upcast::<gio::ListModel>())
-        //     // .factory(&factory)
-        //     .build();
-
         self.cbo_sources.set_enable_search(false);
         self.cbo_sources.set_show_arrow(true);
         self.cbo_sources.set_css_classes(&vec!["flat"]);
-
-        // let sources_borrow = self.sources.borrow();
-        // let ref_dsn = sources_borrow.as_ref();
-        // if let Some(dsn) = ref_dsn {
-        //     let model = dsn.clone();
-        //     cbo.set_model(Some(&model));
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_, item| {
@@ -109,9 +91,26 @@ impl QueryEditor {
             .tooltip_text("Execute")
             .css_classes(vec!["btn", "flat"])
             .build();
-        btn_execute.connect_clicked(|_button| {
-            debug!("button execute clicked");
-        });
+        btn_execute.connect_clicked(glib::clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |_button| {
+                debug!("button execute clicked");
+
+                if let Some(item) = this.cbo_sources.selected_item() {
+                    if let Some(boxed) = item.downcast_ref::<glib::BoxedAnyObject>() {
+                        // let value: std::cell::Ref<String> = boxed_obj.borrow();
+                        // println!("Selected value: {}", *value);
+
+                        // let node: Ref<Box<dyn Node>> = boxed.borrow();
+                        // debug!("selected node {:?}", node);
+
+                        let dsn: Ref<Box<dyn DataSourceNode>> = boxed.borrow();
+                        debug!("data source node {:?}", dsn);
+                    }
+                }
+            }
+        ));
 
         self.build_sources_drop_down();
 

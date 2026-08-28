@@ -1,5 +1,6 @@
 use tracing::debug;
 
+use async_trait::async_trait;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use std::sync::Arc;
 
@@ -26,6 +27,7 @@ impl SchemaNode {
     }
 }
 
+#[async_trait]
 impl Node for SchemaNode {
     fn name(&self) -> &str {
         return &self.name.as_str();
@@ -52,6 +54,10 @@ impl Node for SchemaNode {
         return Some(nodes);
     }
 
+    async fn children_async(&self) -> Result<Option<Vec<Box<dyn Node>>>, &'static str> {
+        return Err("//todo not implemented");
+    }
+
     fn context_menu(&self) -> Option<gio::Menu> {
         let menu = gio::Menu::new();
 
@@ -60,4 +66,8 @@ impl Node for SchemaNode {
 
         return Some(menu);
     }
+
+    // fn as_any(&self) -> &dyn std::any::Any {
+    //     return self;
+    // }
 }

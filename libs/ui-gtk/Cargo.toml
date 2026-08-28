@@ -12,6 +12,8 @@ serde_json = "*"
 tokio = { version = "*", features = ["full"] }
 gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
 async-channel = "*"
+async-trait = "*"
+
 sourceview5 = "*"
 
 # projects

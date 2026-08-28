@@ -296,9 +296,9 @@ impl ObjectImpl for PostgresConnectionEditor {
         // row 7
         self.label_test.set_halign(gtk::Align::Start);
         self.label_test.set_hexpand(true);
-        self.label_test.set_vexpand(true);
+        // self.label_test.set_vexpand(true);
         self.label_test.set_wrap(true);
-        grid.attach(&self.label_test, 0, 7, 2, 2);
+        grid.attach(&self.label_test, 0, 7, 2, 1);
 
         let container = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)

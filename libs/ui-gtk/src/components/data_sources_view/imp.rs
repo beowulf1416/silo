@@ -156,15 +156,6 @@ impl DataSourcesView {
     }
 
     fn create_child_model(obj: &glib::BoxedAnyObject) -> Option<gio::ListModel> {
-        // let node_ref: Ref<Box<dyn Node>> = obj.borrow::<Box<dyn Node>>();
-        // let node: &dyn Node = node_ref.as_ref();
-
-        // if let Some(store) = node.children() {
-        //     return Some(store.upcast());
-        // } else {
-        //     return None;
-        // }
-
         let store = gio::ListStore::new::<glib::BoxedAnyObject>();
 
         let boxed: Box<dyn Node> = Box::new(LoadingNode {});
