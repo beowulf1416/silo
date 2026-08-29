@@ -17,6 +17,7 @@ pub struct QueryEditor {
 
     // pub(super) sources: RefCell<Option<gio::ListStore>>,
     pub(super) cbo_sources: gtk::DropDown,
+    pub(super) nb: gtk::Notebook,
 }
 
 impl QueryEditor {
@@ -180,8 +181,23 @@ impl ObjectImpl for QueryEditor {
     fn constructed(&self) {
         self.parent_constructed();
 
-        let action_bar = self.build_action_bar();
+        let paned = gtk::Paned::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .hexpand(true)
+            .vexpand(true)
+            .shrink_start_child(false)
+            .resize_start_child(false)
+            .build();
+
         let editor = self.build_editor();
+
+        self.nb.set_hexpand(true);
+        self.nb.set_vexpand(true);
+
+        paned.set_start_child(Some(&editor));
+        paned.set_end_child(Some(&self.nb));
+
+        let action_bar = self.build_action_bar();
 
         let container = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
@@ -189,7 +205,7 @@ impl ObjectImpl for QueryEditor {
             .vexpand(true)
             .build();
         container.append(&action_bar);
-        container.append(&editor);
+        container.append(&paned);
 
         let obj = self.obj();
         obj.append(&container);
