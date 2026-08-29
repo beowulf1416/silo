@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<gresources>
-    <gresource prefix="/org/devphilplus/silo/images">
-        <file compressed="true" preprocess="xml-stripblanks">silo.svg</file>
-    </gresource>
-</gresources>
