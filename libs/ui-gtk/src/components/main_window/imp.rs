@@ -175,6 +175,8 @@ impl MainWindow {
             .hexpand(true)
             .vexpand(false)
             .tooltip_markup("Status Bar")
+            .margin_start(10)
+            .margin_end(10)
             .build();
 
         container.append(&self.info);
@@ -240,14 +242,6 @@ impl ObjectImpl for MainWindow {
         paned.set_start_child(Some(&dsv.clone()));
         paned.set_end_child(Some(&self.ev));
 
-        // status bar
-        // let status_box = gtk::Box::builder()
-        //     .orientation(gtk::Orientation::Horizontal)
-        //     .hexpand(true)
-        //     .vexpand(false)
-        //     .height_request(40)
-        //     .tooltip_text("Status bar")
-        //     .build();
         let status_box = self.build_status_bar();
         content_box.append(&status_box);
 

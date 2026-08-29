@@ -4,14 +4,13 @@ use async_channel::Receiver;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use tracing::{debug, error, warn};
 
-use std::borrow::BorrowMut;
-
 use serde_json::Value;
+use std::cell::Ref;
 use std::sync::Arc;
 
 use crate::App;
 
-use silo_plugin::node::Node;
+use silo_plugin::node::{DataSourceNode, Node};
 use silo_plugin::{ApplicationMessage, StatusMessage};
 
 use crate::components;
@@ -136,6 +135,7 @@ impl MainWindow {
             }
             ApplicationMessage::WorkspaceSaveRequested => {
                 debug!("//todo workspace save requested");
+                self.workspace_save();
             }
             ApplicationMessage::NewDataSourceRequested(plugin_name) => {
                 debug!(
@@ -171,32 +171,10 @@ impl MainWindow {
                 self.data_source_add(box_node);
             }
             ApplicationMessage::NewQueryEditorRequested(plugin_name) => {
-                // if let Some(plugin) = self.app().registry().create_plugin(&plugin_name) {
-                //     debug!("plugin {:?}", plugin);
-
-                //     if let Some(widget) = plugin.build_query_editor_widget(self.imp().sender()) {
-                //         let imp = self.imp();
-                //         imp.ev.add_editor(
-                //             &plugin_name,
-                //             widget,
-                //             self.imp().sender.borrow().as_ref().unwrap(),
-                //         );
-                //     } else {
-                //         warn!("plugin {} does not have a query editor", plugin_name);
-                //     }
-                // } else {
-                //     error!("unable to find plugin {}", plugin_name);
-                // }
-
                 let imp = self.imp();
 
                 let editor =
                     components::query_editor::QueryEditor::with_model(&self.data_sources());
-
-                // let ds = self.data_sources();
-                // debug!("data sources {:?}", ds);
-
-                // editor.set_data_sources(self.data_sources());
 
                 imp.ev.add_editor(
                     "test",
@@ -216,5 +194,28 @@ impl MainWindow {
 
     fn set_workspace_path(&self, path: &String) {
         debug!("set_workspace_path {}", path);
+    }
+
+    fn workspace_save(&self) {
+        debug!("workspace_save");
+
+        let imp = self.imp();
+        let sources = self.data_sources();
+
+        let dsns: Vec<Arc<dyn DataSourceNode>> = sources
+            .iter::<glib::BoxedAnyObject>()
+            .map(|item| {
+                let result = {
+                    let node_ref: glib::BoxedAnyObject = item.expect("//todo glib::BoxedAnyObject");
+                    node_ref
+                };
+                let node_ref: Ref<Arc<dyn Node>> = result.borrow();
+                let node: &dyn Node = node_ref.as_ref();
+                node.into_DataSourceNode()
+            })
+            .filter(|item| item.is_some())
+            .map(|item| item.unwrap())
+            .collect();
+        debug!("{:?}", dsns);
     }
 }
