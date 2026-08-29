@@ -194,6 +194,12 @@ impl MainWindow {
 
     fn set_workspace_path(&self, path: &String) {
         debug!("set_workspace_path {}", path);
+        let imp = self.imp();
+        imp.app
+            .borrow()
+            .clone()
+            .expect("expecting App")
+            .set_workspace_path(path.clone());
     }
 
     fn workspace_save(&self) {
