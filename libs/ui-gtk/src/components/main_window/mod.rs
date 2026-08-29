@@ -11,8 +11,8 @@ use std::sync::Arc;
 
 use crate::App;
 
-use silo_plugin::ApplicationMessage;
 use silo_plugin::node::Node;
+use silo_plugin::{ApplicationMessage, StatusMessage};
 
 use crate::components;
 
@@ -74,12 +74,16 @@ impl MainWindow {
             .clone();
     }
 
-    pub fn data_source_add(&self, dsn: Box<dyn Node>) {
+    pub fn data_source_add(&self, dsn: Arc<dyn Node>) {
         let sources = self.data_sources();
         sources.append(&glib::BoxedAnyObject::new(dsn));
     }
 
-    pub fn start_receiver(&self, receiver: Receiver<ApplicationMessage>) {
+    pub fn start_receivers(
+        &self,
+        receiver: Receiver<ApplicationMessage>,
+        receiver_status: Receiver<StatusMessage>,
+    ) {
         glib::MainContext::default().spawn_local(glib::clone!(
             #[weak(rename_to = window)]
             self,
@@ -89,6 +93,29 @@ impl MainWindow {
                 }
             }
         ));
+
+        glib::MainContext::default().spawn_local(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            async move {
+                while let Ok(msg) = receiver_status.recv().await {
+                    window.process_notifications(msg);
+                }
+            }
+        ));
+    }
+
+    fn process_notifications(&self, msg: StatusMessage) {
+        match msg {
+            StatusMessage::Error(message) => {
+                debug!("show error: {}", message);
+                self.imp().info.set_label(&message);
+            }
+            StatusMessage::Info(message) => {
+                debug!("show info: {}", message);
+                self.imp().info.set_label(&message);
+            }
+        }
     }
 
     fn process_message(&self, msg: ApplicationMessage) {

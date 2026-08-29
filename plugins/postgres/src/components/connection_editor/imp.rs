@@ -2,7 +2,7 @@ use tracing::{debug, error, info};
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use std::cell::RefCell;
-// use std::sync::Arc;
+use std::sync::Arc;
 
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
@@ -183,7 +183,7 @@ impl ObjectImpl for PostgresConnectionEditor {
             #[weak(rename_to = editor)]
             self,
             move |_button| {
-                let boxed: Box<dyn Node> = Box::new(PostgresDataSourceNode::new(
+                let boxed: Arc<dyn Node> = Arc::new(PostgresDataSourceNode::new(
                     editor.entry_name.text().as_str(),
                     ConnectionSettings {
                         name: editor.entry_db.text().to_string(),

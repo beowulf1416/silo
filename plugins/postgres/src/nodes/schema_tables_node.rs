@@ -6,7 +6,7 @@ use tracing::debug;
 use sqlx::postgres::{PgPoolOptions, PgRow};
 use sqlx::{PgPool, Row};
 
-use silo_plugin::node::Node;
+use silo_plugin::node::{DataSourceNode, Node};
 
 use crate::nodes::ConnectionSettings;
 
@@ -27,17 +27,17 @@ impl Node for SchemaTablesNode {
         return "Tables";
     }
 
-    fn clone_box(&self) -> Box<dyn Node> {
-        return Box::new(self.clone());
-    }
+    // fn clone_box(&self) -> Box<dyn Node> {
+    //     return Box::new(self.clone());
+    // }
 
-    fn children(&self) -> Option<Vec<Box<dyn Node>>> {
+    fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
         debug!("SchemaTableNode::children");
 
         return None;
     }
 
-    async fn children_async(&self) -> Result<Option<Vec<Box<dyn Node>>>, &'static str> {
+    async fn children_async(&self) -> Result<Option<Vec<Arc<dyn Node>>>, &'static str> {
         return Err("//todo not implemented");
     }
 
@@ -50,6 +50,9 @@ impl Node for SchemaTablesNode {
         return Some(menu);
     }
 
+    fn into_DataSourceNode(&self) -> Option<Arc<dyn DataSourceNode>> {
+        return None;
+    }
     // fn as_any(&self) -> &dyn std::any::Any {
     //     return self;
     // }

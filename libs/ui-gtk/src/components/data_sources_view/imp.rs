@@ -9,12 +9,17 @@ use tracing_subscriber::field::debug;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 use crate::components::data_sources_view::LoadingNode;
+use crate::get_runtime;
 // use crate::lib::get_runtime;
 
 use silo_plugin::node::Node;
+use silo_plugin::{ApplicationMessage, StatusMessage};
 
 #[derive(Debug, Default)]
 pub struct DataSourcesView {
+    pub(super) sender: RefCell<Option<Sender<ApplicationMessage>>>,
+    pub(super) sender_status: RefCell<Option<Sender<StatusMessage>>>,
+
     pub(super) store: RefCell<Option<gio::ListStore>>,
     pub tv: gtk::ColumnView,
     // pub sources: Vec<Arc<data_source_node::DataSourceNode>>,
@@ -49,6 +54,29 @@ impl DataSourcesView {
         let selection = gtk::SingleSelection::builder().model(&model).build();
 
         self.tv.set_model(Some(&selection));
+    }
+
+    pub fn set_sender(
+        &self,
+        sender: Sender<ApplicationMessage>,
+        sender_status: Sender<StatusMessage>,
+    ) {
+        self.sender.replace(Some(sender));
+        self.sender_status.replace(Some(sender_status));
+    }
+
+    fn send(&self, message: ApplicationMessage) {
+        if let Some(sender) = self.sender.borrow().clone() {
+            let _ = sender.send_blocking(message);
+        }
+    }
+
+    fn notify(&self, message: StatusMessage) {
+        if let Some(sender_status) = self.sender_status.borrow().clone() {
+            glib::MainContext::default().spawn_local(async move {
+                let _ = sender_status.send(message).await;
+            });
+        }
     }
 
     fn build_menu(&self) -> gio::Menu {
@@ -126,17 +154,13 @@ impl DataSourcesView {
 
         //todo
         let store = gio::ListStore::new::<glib::BoxedAnyObject>();
-        let model = gtk::TreeListModel::new(store, false, false, |obj| {
-            let node = obj
+
+        // let this = self.clone();
+        let model = gtk::TreeListModel::new(store, false, false, move |obj| {
+            let boxed = obj
                 .downcast_ref::<glib::BoxedAnyObject>()
                 .expect("//todo BoxedAnyObject");
-            return Self::create_child_model(&node);
-
-            // let store = gio::ListStore::new();
-
-            // store.append(&glib::BoxedAnyObject::new(Box::new(LoadingNode {})));
-
-            // return Some(store.upcast());
+            return Self::create_child_model(&boxed);
         });
 
         let selection = gtk::SingleSelection::builder().model(&model).build();
@@ -158,26 +182,47 @@ impl DataSourcesView {
     fn create_child_model(obj: &glib::BoxedAnyObject) -> Option<gio::ListModel> {
         let store = gio::ListStore::new::<glib::BoxedAnyObject>();
 
-        let boxed: Box<dyn Node> = Box::new(LoadingNode {});
+        let boxed: Arc<dyn Node> = Arc::new(LoadingNode {});
         store.append(&glib::BoxedAnyObject::new(boxed));
 
         let store_clone = store.clone();
-        let obj_clone = obj.clone();
-        // let node_clone = node.clone();
+        // let obj_clone = obj.clone();
+
+        let node: Arc<dyn Node> = {
+            let node_ref: Ref<Arc<dyn Node>> = obj.borrow::<Arc<dyn Node>>();
+            Arc::clone(&node_ref)
+        };
+
+        let handle = get_runtime().spawn(async move {
+            let future = { node.children_async() };
+
+            match future.await {
+                Err(e) => {
+                    error!("unable to fetch children of node :{}", e);
+                    None
+                }
+                Ok(children) => {
+                    debug!("fetched children: {:?}", children);
+                    children
+                }
+            }
+        });
 
         let main_context = glib::MainContext::default();
         main_context.spawn_local(async move {
-            let node_ref: Ref<Box<dyn Node>> = obj_clone.borrow::<Box<dyn Node>>();
-            let node: &dyn Node = node_ref.as_ref();
-
-            match node.children() {
-                None => {
+            match handle.await {
+                Err(e) => {
+                    error!("Failed to get children for node: {:?}", e);
                     store_clone.remove_all();
                 }
-                Some(children) => {
+                Ok(result) => {
+                    debug!("result: {:?}", result);
                     store_clone.remove_all();
-                    for child in children {
-                        store_clone.append(&glib::BoxedAnyObject::new(child));
+                    if let Some(children) = result {
+                        for child in children {
+                            debug!("appending child");
+                            store_clone.append(&glib::BoxedAnyObject::new(child));
+                        }
                     }
                 }
             }
@@ -230,7 +275,7 @@ impl DataSourcesView {
                 .and_downcast::<glib::BoxedAnyObject>()
                 .expect("expecting BoxedAnyObject");
 
-            let node_ref: Ref<Box<dyn Node>> = obj.borrow::<Box<dyn Node>>();
+            let node_ref: Ref<Arc<dyn Node>> = obj.borrow::<Arc<dyn Node>>();
             let node: &dyn Node = node_ref.as_ref();
 
             label.set_label(&node.name());
@@ -278,7 +323,7 @@ impl DataSourcesView {
                 .and_downcast::<glib::BoxedAnyObject>()
                 .expect("expecting BoxedAnyObject");
 
-            let node_ref: Ref<Box<dyn Node>> = obj.borrow::<Box<dyn Node>>();
+            let node_ref: Ref<Arc<dyn Node>> = obj.borrow::<Arc<dyn Node>>();
             let node: &dyn Node = node_ref.as_ref();
 
             if let Some(menu) = node.context_menu() {

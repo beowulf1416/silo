@@ -2,6 +2,7 @@ use tracing::{debug, error};
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use std::cell::{Ref, RefCell};
+use std::sync::Arc;
 
 use crate::nodes::ConnectionSettings;
 use crate::nodes::data_source_node::MySQLDataSourceNode;
@@ -116,7 +117,7 @@ impl ObjectImpl for MySQLConnectionEditor {
             move |_button| {
                 debug!("//todo save button clicked");
 
-                let boxed: Box<dyn Node> = Box::new(MySQLDataSourceNode::new(
+                let boxed: Arc<dyn Node> = Arc::new(MySQLDataSourceNode::new(
                     editor.entry_name.text().as_str(),
                     ConnectionSettings {
                         host: editor.entry_host.text().to_string(),

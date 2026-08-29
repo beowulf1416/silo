@@ -15,8 +15,8 @@ use gtk::{
 };
 
 // use super::MainWindowInputMessage;
-use silo_plugin::ApplicationMessage;
 use silo_plugin::node::Node;
+use silo_plugin::{ApplicationMessage, StatusMessage};
 
 use crate::{
     APP_TITLE,
@@ -38,18 +38,18 @@ use crate::{
 #[derive(Debug, Default)]
 pub struct MainWindow {
     pub sender: RefCell<Option<async_channel::Sender<ApplicationMessage>>>,
+    pub sender_status: RefCell<Option<async_channel::Sender<StatusMessage>>>,
 
-    pub header_bar: Header,
-    // pub pane: gtk::Paned,
-    // pub dsv: DataSourceView,
-    pub dsv: RefCell<Option<DataSourcesView>>,
-    pub ev: EditorView,
+    pub(super) header_bar: Header,
+    pub(super) info: gtk::Label,
+    pub(super) dsv: RefCell<Option<DataSourcesView>>,
+    pub(super) ev: EditorView,
 
     // pub plugins: HashMap<String, Box<dyn Plugin>>,
     // pub registry: Rc<PluginRegistry>,
-    pub app: RefCell<Option<App>>,
+    pub(super) app: RefCell<Option<App>>,
 
-    pub data_sources: RefCell<Option<gio::ListStore>>,
+    pub(super) data_sources: RefCell<Option<gio::ListStore>>,
 }
 
 impl MainWindow {
@@ -72,6 +72,32 @@ impl MainWindow {
             .expect("sender is not set")
             .clone();
     }
+
+    pub fn notify(&self, message: StatusMessage) {
+        let sender = self
+            .sender_status
+            .borrow()
+            .as_ref()
+            .expect("sender is not set")
+            .clone();
+
+        glib::MainContext::default().spawn(async move {
+            let _ = sender.send(message).await;
+        });
+    }
+
+    // pub fn send(&self, message: ApplicationMessage) {
+    //     let sender = self
+    //         .sender
+    //         .borrow()
+    //         .as_ref()
+    //         .expect("sender is not set")
+    //         .clone();
+
+    //     glib::MainContext::default().spawn(async move {
+    //         let _ = sender.send(message).await;
+    //     });
+    // }
 
     fn add_actions(&self) {
         let obj = self.obj().clone();
@@ -132,7 +158,28 @@ impl MainWindow {
 
     fn build_dsv(&self) -> DataSourcesView {
         let dsv = DataSourcesView::with_model(&self.data_sources());
+        dsv.set_sender(
+            self.sender.borrow().clone().unwrap(),
+            self.sender_status.borrow().clone().unwrap(),
+        );
         return dsv;
+    }
+
+    fn build_status_bar(&self) -> gtk::Box {
+        // let info = gtk::Label::builder().label("Ready").build();
+        self.info.set_label(&"Ready");
+        self.info.set_height_request(40);
+
+        let container = gtk::Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .hexpand(true)
+            .vexpand(false)
+            .tooltip_markup("Status Bar")
+            .build();
+
+        container.append(&self.info);
+
+        return container;
     }
 }
 
@@ -164,6 +211,9 @@ impl ObjectImpl for MainWindow {
         let (sender, receiver) = async_channel::unbounded::<ApplicationMessage>();
         self.sender.replace(Some(sender));
 
+        let (sender, receiver_status) = async_channel::unbounded::<StatusMessage>();
+        self.sender_status.replace(Some(sender));
+
         obj.set_default_size(800, 600);
         obj.set_titlebar(Some(&self.header_bar));
 
@@ -191,19 +241,20 @@ impl ObjectImpl for MainWindow {
         paned.set_end_child(Some(&self.ev));
 
         // status bar
-        let status_box = gtk::Box::builder()
-            .orientation(gtk::Orientation::Horizontal)
-            .hexpand(true)
-            .vexpand(false)
-            .height_request(40)
-            .tooltip_text("Status bar")
-            .build();
+        // let status_box = gtk::Box::builder()
+        //     .orientation(gtk::Orientation::Horizontal)
+        //     .hexpand(true)
+        //     .vexpand(false)
+        //     .height_request(40)
+        //     .tooltip_text("Status bar")
+        //     .build();
+        let status_box = self.build_status_bar();
         content_box.append(&status_box);
 
         self.add_actions();
         self.setup_action_handlers();
 
-        obj.start_receiver(receiver);
+        obj.start_receivers(receiver, receiver_status);
     }
 }
 

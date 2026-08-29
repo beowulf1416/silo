@@ -124,14 +124,14 @@ impl Node for PostgresDataSourceNode {
         return self.name.as_str();
     }
 
-    fn clone_box(&self) -> Box<dyn Node> {
-        debug!("PostgresDataSourceNode::clone_box");
+    // fn clone_box(&self) -> Box<dyn Node> {
+    //     debug!("PostgresDataSourceNode::clone_box");
 
-        let boxed: Box<dyn Node> = Box::new(self.clone());
-        return boxed;
-    }
+    //     let boxed: Box<dyn Node> = Box::new(self.clone());
+    //     return boxed;
+    // }
 
-    fn children(&self) -> Option<Vec<Box<dyn Node>>> {
+    fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
         debug!("PostgresDataSourceNode::children");
 
         match self.fetch_schemas() {
@@ -140,18 +140,18 @@ impl Node for PostgresDataSourceNode {
                 return None;
             }
             Ok(schemas) => {
-                let mut result: Vec<Box<dyn Node>> = vec![];
+                let mut result: Vec<Arc<dyn Node>> = vec![];
                 for schema in schemas {
-                    let boxed: Box<dyn Node> =
-                        Box::new(SchemaNode::new(schema.as_str(), Arc::clone(&self.settings)));
-                    result.push(boxed);
+                    let arced: Arc<dyn Node> =
+                        Arc::new(SchemaNode::new(schema.as_str(), Arc::clone(&self.settings)));
+                    result.push(arced);
                 }
                 return Some(result);
             }
         }
     }
 
-    async fn children_async(&self) -> Result<Option<Vec<Box<dyn Node>>>, &'static str> {
+    async fn children_async(&self) -> Result<Option<Vec<Arc<dyn Node>>>, &'static str> {
         debug!("PostgresDataSourceNode::children");
 
         match self.fetch_schemas_async().await {
@@ -160,10 +160,10 @@ impl Node for PostgresDataSourceNode {
                 return Err("unable to fetch schemas");
             }
             Ok(schemas) => {
-                let mut result: Vec<Box<dyn Node>> = vec![];
+                let mut result: Vec<Arc<dyn Node>> = vec![];
                 for schema in schemas {
-                    let boxed: Box<dyn Node> =
-                        Box::new(SchemaNode::new(schema.as_str(), Arc::clone(&self.settings)));
+                    let boxed: Arc<dyn Node> =
+                        Arc::new(SchemaNode::new(schema.as_str(), Arc::clone(&self.settings)));
                     result.push(boxed);
                 }
                 return Ok(Some(result));
@@ -201,10 +201,15 @@ impl Node for PostgresDataSourceNode {
     // fn as_any(&self) -> &dyn std::any::Any {
     //     return self;
     // }
+
+    fn into_DataSourceNode(&self) -> Option<Arc<dyn DataSourceNode>> {
+        return Some(Arc::new(self.clone()));
+    }
 }
 
+#[async_trait]
 impl DataSourceNode for PostgresDataSourceNode {
-    fn query(&self, sql: &str) -> Result<(), &'static str> {
+    async fn query(&self, sql: &str) -> Result<(), &'static str> {
         debug!("PostgresDataSourceNode::query {}", sql);
         return Ok(());
     }

@@ -3,7 +3,9 @@ pub mod plugin;
 
 use tracing::debug;
 
-use std::collections::HashMap;
+use std::sync::Arc;
+
+// use std::collections::HashMap;
 
 pub type PluginName = String;
 pub type DataSourceName = String;
@@ -16,7 +18,12 @@ pub enum ApplicationMessage {
     NewQueryEditorRequested(DataSourceName),
     CloseEditorRequested(Option<u32>),
     NewDataSourceRequested(PluginName),
-    DataSourceAdd(Box<dyn node::Node>),
+    DataSourceAdd(Arc<dyn node::Node>),
+}
+
+pub enum StatusMessage {
+    Info(String),
+    Error(String),
 }
 
 // pub trait Plugin: std::fmt::Debug {

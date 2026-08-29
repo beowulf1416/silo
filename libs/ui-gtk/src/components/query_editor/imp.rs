@@ -1,8 +1,8 @@
-use gtk::gsk::PorterDuff::Source;
 use tracing::{debug, error};
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use std::cell::{Ref, RefCell};
+use std::sync::Arc;
 
 use sourceview5::prelude::*;
 
@@ -58,7 +58,7 @@ impl QueryEditor {
                 .and_downcast::<glib::BoxedAnyObject>()
                 .expect("//todo glib::BoxedAnyObject");
 
-            let node_ref: Ref<Box<dyn Node>> = boxed.borrow::<Box<dyn Node>>();
+            let node_ref: Ref<Arc<dyn Node>> = boxed.borrow::<Arc<dyn Node>>();
             let node: &dyn Node = node_ref.as_ref();
 
             label.set_label(node.name());
@@ -99,14 +99,27 @@ impl QueryEditor {
 
                 if let Some(item) = this.cbo_sources.selected_item() {
                     if let Some(boxed) = item.downcast_ref::<glib::BoxedAnyObject>() {
-                        // let value: std::cell::Ref<String> = boxed_obj.borrow();
-                        // println!("Selected value: {}", *value);
+                        let node_ref: Ref<Arc<dyn Node>> = boxed.borrow();
+                        let node: &dyn Node = node_ref.as_ref();
+                        let dsn_opt = node.into_DataSourceNode();
+                        // };
 
-                        // let node: Ref<Box<dyn Node>> = boxed.borrow();
-                        // debug!("selected node {:?}", node);
-
-                        let dsn: Ref<Box<dyn DataSourceNode>> = boxed.borrow();
-                        debug!("data source node {:?}", dsn);
+                        if let Some(dsn) = dsn_opt {
+                            let arc_dsn = Arc::clone(&dsn);
+                            glib::MainContext::default().spawn_local(async move {
+                                match arc_dsn
+                                    .query("select schema_name from information_schema.schemata")
+                                    .await
+                                {
+                                    Err(e) => {
+                                        error!("query error: {}", e);
+                                    }
+                                    Ok(_) => {
+                                        debug!("query succeeded");
+                                    }
+                                }
+                            });
+                        }
                     }
                 }
             }

@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use std::sync::Arc;
 
-use silo_plugin::node::Node;
+use silo_plugin::node::{DataSourceNode, Node};
 
 use crate::nodes::ConnectionSettings;
 use crate::nodes::schema_functions_node::SchemaFunctionsNode;
@@ -33,28 +33,28 @@ impl Node for SchemaNode {
         return &self.name.as_str();
     }
 
-    fn clone_box(&self) -> Box<dyn Node> {
-        return Box::new(self.clone());
-    }
+    // fn clone_box(&self) -> Box<dyn Node> {
+    //     return Box::new(self.clone());
+    // }
 
-    fn children(&self) -> Option<Vec<Box<dyn Node>>> {
+    fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
         debug!("SchemaNode::children");
 
-        let mut nodes: Vec<Box<dyn Node>> = vec![];
+        let mut nodes: Vec<Arc<dyn Node>> = vec![];
 
-        let boxed: Box<dyn Node> = Box::new(SchemaTablesNode::new(Arc::clone(&self.settings)));
+        let boxed: Arc<dyn Node> = Arc::new(SchemaTablesNode::new(Arc::clone(&self.settings)));
         nodes.push(boxed);
 
-        let boxed: Box<dyn Node> = Box::new(SchemaProceduresNode::new(Arc::clone(&self.settings)));
+        let boxed: Arc<dyn Node> = Arc::new(SchemaProceduresNode::new(Arc::clone(&self.settings)));
         nodes.push(boxed);
 
-        let boxed: Box<dyn Node> = Box::new(SchemaFunctionsNode::new(Arc::clone(&self.settings)));
+        let boxed: Arc<dyn Node> = Arc::new(SchemaFunctionsNode::new(Arc::clone(&self.settings)));
         nodes.push(boxed);
 
         return Some(nodes);
     }
 
-    async fn children_async(&self) -> Result<Option<Vec<Box<dyn Node>>>, &'static str> {
+    async fn children_async(&self) -> Result<Option<Vec<Arc<dyn Node>>>, &'static str> {
         return Err("//todo not implemented");
     }
 
@@ -65,6 +65,10 @@ impl Node for SchemaNode {
         menu.append_item(&item);
 
         return Some(menu);
+    }
+
+    fn into_DataSourceNode(&self) -> Option<Arc<dyn DataSourceNode>> {
+        return None;
     }
 
     // fn as_any(&self) -> &dyn std::any::Any {
