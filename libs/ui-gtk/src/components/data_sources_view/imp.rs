@@ -2,15 +2,12 @@ use tracing::{debug, error};
 
 use async_channel::Sender;
 use std::cell::{Ref, RefCell};
-use std::result;
 use std::sync::Arc;
-use tracing_subscriber::field::debug;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 use crate::components::data_sources_view::LoadingNode;
 use crate::get_runtime;
-// use crate::lib::get_runtime;
 
 use silo_plugin::node::Node;
 use silo_plugin::{ApplicationMessage, StatusMessage};
@@ -220,7 +217,6 @@ impl DataSourcesView {
                     store_clone.remove_all();
                     if let Some(children) = result {
                         for child in children {
-                            debug!("appending child");
                             store_clone.append(&glib::BoxedAnyObject::new(child));
                         }
                     }

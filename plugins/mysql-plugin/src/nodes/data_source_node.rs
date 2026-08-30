@@ -60,8 +60,8 @@ impl Node for MySQLDataSourceNode {
         return Some(nodes);
     }
 
-    async fn children_async(&self) -> Result<Option<Vec<Arc<dyn Node>>>, &'static str> {
-        return Err("//todo not implemented");
+    async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
+        return Err(anyhow::anyhow!("//todo not implemented"));
     }
 
     fn context_menu(&self) -> Option<gio::Menu> {
@@ -94,7 +94,7 @@ impl Node for MySQLDataSourceNode {
 
 #[async_trait]
 impl DataSourceNode for MySQLDataSourceNode {
-    async fn query(&self, sql: &str) -> Result<(), &'static str> {
-        return Err("//todo not implemented");
+    async fn query(&self, sql: &str) -> anyhow::Result<()> {
+        return Err(anyhow::anyhow!("//todo not implemented"));
     }
 }

@@ -11,6 +11,8 @@ use sourceview5::prelude::*;
 use silo_plugin::ApplicationMessage;
 use silo_plugin::node::{DataSourceNode, Node};
 
+use crate::get_runtime;
+
 // currently executing statement
 const CURRENT_STATEMENT_EXEC_TAG_NAME: &str = "current-statement-exec";
 const CURRENT_STATEMENT_COLOR: &str = "#30C5FF";
@@ -113,20 +115,34 @@ impl QueryEditor {
                         let node_ref: Ref<Arc<dyn Node>> = boxed.borrow();
                         let node: &dyn Node = node_ref.as_ref();
                         let dsn_opt = node.into_DataSourceNode();
-                        // };
 
                         if let Some(dsn) = dsn_opt {
                             let arc_dsn = Arc::clone(&dsn);
-                            glib::MainContext::default().spawn_local(async move {
-                                match arc_dsn
-                                    .query("select schema_name from information_schema.schemata")
-                                    .await
-                                {
+
+                            let handle = get_runtime().spawn(async move {
+                                let value = sql.unwrap_or_default();
+
+                                let future = { arc_dsn.query(value.as_str()) };
+
+                                match future.await {
                                     Err(e) => {
-                                        error!("query error: {}", e);
+                                        error!("unable to fetch children of node :{}", e);
+                                        None
                                     }
                                     Ok(_) => {
-                                        debug!("query succeeded");
+                                        debug!("succeeded");
+                                        Some("test")
+                                    }
+                                }
+                            });
+
+                            glib::MainContext::default().spawn_local(async move {
+                                match handle.await {
+                                    Err(e) => {
+                                        error!("unable to fetch children of node :{}", e);
+                                    }
+                                    Ok(_) => {
+                                        debug!("succeeded");
                                     }
                                 }
                             });
@@ -160,18 +176,6 @@ impl QueryEditor {
         if let Some(ref scheme) = sourceview5::StyleSchemeManager::new().scheme("solarized-light") {
             buffer.set_style_scheme(Some(scheme));
         }
-
-        // let view = sourceview5::View::with_buffer(&buffer);
-        // self.view.set_buffer(Some(&buffer));
-        // self.view.set_monospace(true);
-        // self.view
-        //     .set_background_pattern(sourceview5::BackgroundPatternType::Grid);
-        // self.view.set_show_line_numbers(true);
-        // self.view.set_highlight_current_line(true);
-        // // view.set_highlight_matching_brackets(true);
-        // self.view.set_tab_width(4);
-        // self.view.set_hexpand(true);
-        // self.view.set_vexpand(true);
 
         self.view.set_buffer(Some(&buffer));
         self.init_source_view();

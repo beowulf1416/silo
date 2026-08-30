@@ -3,6 +3,7 @@ pub mod schema_functions_node;
 pub mod schema_node;
 pub mod schema_procedures_node;
 pub mod schema_tables_node;
+pub mod table_node;
 
 #[derive(Debug, Clone)]
 pub struct ConnectionSettings {

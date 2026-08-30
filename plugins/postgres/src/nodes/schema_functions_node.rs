@@ -35,8 +35,8 @@ impl Node for SchemaFunctionsNode {
         return None;
     }
 
-    async fn children_async(&self) -> Result<Option<Vec<Arc<dyn Node>>>, &'static str> {
-        return Err("//todo not implemented");
+    async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
+        return Err(anyhow::anyhow!("//todo not implemented"));
     }
 
     fn context_menu(&self) -> Option<gio::Menu> {

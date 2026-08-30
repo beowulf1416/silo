@@ -33,16 +33,15 @@ impl Node for SchemaNode {
         return &self.name.as_str();
     }
 
-    // fn clone_box(&self) -> Box<dyn Node> {
-    //     return Box::new(self.clone());
-    // }
-
     fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
         debug!("SchemaNode::children");
 
         let mut nodes: Vec<Arc<dyn Node>> = vec![];
 
-        let boxed: Arc<dyn Node> = Arc::new(SchemaTablesNode::new(Arc::clone(&self.settings)));
+        let boxed: Arc<dyn Node> = Arc::new(SchemaTablesNode::new(
+            &self.name,
+            Arc::clone(&self.settings),
+        ));
         nodes.push(boxed);
 
         let boxed: Arc<dyn Node> = Arc::new(SchemaProceduresNode::new(Arc::clone(&self.settings)));
@@ -54,8 +53,24 @@ impl Node for SchemaNode {
         return Some(nodes);
     }
 
-    async fn children_async(&self) -> Result<Option<Vec<Arc<dyn Node>>>, &'static str> {
-        return Err("//todo not implemented");
+    async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
+        // return Err(anyhow::anyhow!("//todo not implemented"));
+
+        let mut nodes: Vec<Arc<dyn Node>> = vec![];
+
+        let boxed: Arc<dyn Node> = Arc::new(SchemaTablesNode::new(
+            &self.name,
+            Arc::clone(&self.settings),
+        ));
+        nodes.push(boxed);
+
+        let boxed: Arc<dyn Node> = Arc::new(SchemaProceduresNode::new(Arc::clone(&self.settings)));
+        nodes.push(boxed);
+
+        let boxed: Arc<dyn Node> = Arc::new(SchemaFunctionsNode::new(Arc::clone(&self.settings)));
+        nodes.push(boxed);
+
+        return Ok(Some(nodes));
     }
 
     fn context_menu(&self) -> Option<gio::Menu> {

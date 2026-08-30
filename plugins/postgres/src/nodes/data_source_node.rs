@@ -7,34 +7,34 @@ use gtk::{
     subclass::prelude::*,
 };
 
+// use std::{cell::RefCell, sync::Once};
+
+use anyhow::anyhow;
 use async_trait::async_trait;
 use std::sync::Arc;
 
 use sqlx::postgres::{PgPoolOptions, PgRow};
-use sqlx::{PgPool, Row};
+use sqlx::{PgPool, Pool, Postgres, Row};
+use tokio::sync::OnceCell;
 
-use crate::nodes::ConnectionSettings;
 use crate::nodes::schema_node::SchemaNode;
+use crate::{PostgresError, nodes::ConnectionSettings};
 use silo_plugin::node::{DataSourceNode, Node};
 
 #[derive(Debug, Clone)]
 pub struct PostgresDataSourceNode {
     name: String,
 
-    // sender: async_channel::Sender<String>,
-    // receiver: async_channel::Receiver<String>,
     settings: Arc<ConnectionSettings>,
+    pool: OnceCell<Pool<Postgres>>,
 }
 
 impl PostgresDataSourceNode {
     pub fn new(name: &str, settings: ConnectionSettings) -> Self {
-        // let (sender, receiver) = async_channel::unbounded::<String>();
-
         return Self {
             name: name.to_string(),
-            // sender,
-            // receiver,
             settings: Arc::new(settings),
+            pool: OnceCell::new(),
         };
     }
 
@@ -80,41 +80,40 @@ impl PostgresDataSourceNode {
         });
     }
 
-    async fn fetch_schemas_async(&self) -> Result<Vec<String>, &'static str> {
-        let user = self.settings.user.clone();
-        let pw = self.settings.pw.clone();
-        let host = self.settings.host.clone();
-        let port = self.settings.port.clone();
-        let db = self.settings.name.clone();
+    async fn get_pool(&self) -> anyhow::Result<&Pool<Postgres>> {
+        match self
+            .pool
+            .get_or_try_init(|| async {
+                let user = self.settings.user.clone();
+                let pw = self.settings.pw.clone();
+                let host = self.settings.host.clone();
+                let port = self.settings.port.clone();
+                let db = self.settings.name.clone();
 
-        let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
+                let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
 
-        match PgPoolOptions::new().max_connections(1).connect(&uri).await {
+                PgPoolOptions::new().max_connections(5).connect(&uri).await
+            })
+            .await
+        {
             Err(e) => {
-                error!(
-                    "an error occured while trying to connect to the database: {}",
-                    e
-                );
-                return Err("an error occured while trying to connect to the databse");
+                return Err(anyhow::anyhow!(PostgresError::ConnectionError(e)));
             }
             Ok(pool) => {
-                let sql = "select schema_name from information_schema.schemata";
-
-                match sqlx::query(sql).fetch_all(&pool).await {
-                    Err(e) => {
-                        error!("an error occured while fetching schemas: {}", e);
-                        return Err("an error occured while fetching schemas");
-                    }
-                    Ok(results) => {
-                        let schemas: Vec<String> = results
-                            .into_iter()
-                            .map(|r| r.get::<String, _>("schema_name"))
-                            .collect();
-                        return Ok(schemas);
-                    }
-                }
+                return Ok(pool);
             }
         }
+    }
+
+    async fn fetch_schemas_async(&self) -> anyhow::Result<Vec<String>> {
+        let pool = self.get_pool().await?;
+        let sql = "select schema_name from information_schema.schemata";
+        let results = sqlx::query(sql).fetch_all(pool).await?;
+        let schemas: Vec<String> = results
+            .into_iter()
+            .map(|r| r.get::<String, _>("schema_name"))
+            .collect();
+        return Ok(schemas);
     }
 }
 
@@ -123,13 +122,6 @@ impl Node for PostgresDataSourceNode {
     fn name(&self) -> &str {
         return self.name.as_str();
     }
-
-    // fn clone_box(&self) -> Box<dyn Node> {
-    //     debug!("PostgresDataSourceNode::clone_box");
-
-    //     let boxed: Box<dyn Node> = Box::new(self.clone());
-    //     return boxed;
-    // }
 
     fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
         debug!("PostgresDataSourceNode::children");
@@ -151,13 +143,13 @@ impl Node for PostgresDataSourceNode {
         }
     }
 
-    async fn children_async(&self) -> Result<Option<Vec<Arc<dyn Node>>>, &'static str> {
+    async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
         debug!("PostgresDataSourceNode::children");
 
         match self.fetch_schemas_async().await {
             Err(e) => {
                 error!("unable to fetch children async {}", e);
-                return Err("unable to fetch schemas");
+                return Err(anyhow!(PostgresError::SchemaError));
             }
             Ok(schemas) => {
                 let mut result: Vec<Arc<dyn Node>> = vec![];
@@ -209,8 +201,19 @@ impl Node for PostgresDataSourceNode {
 
 #[async_trait]
 impl DataSourceNode for PostgresDataSourceNode {
-    async fn query(&self, sql: &str) -> Result<(), &'static str> {
+    async fn query(&self, sql: &str) -> anyhow::Result<()> {
         debug!("PostgresDataSourceNode::query {}", sql);
-        return Ok(());
+
+        let mut builder: sqlx::QueryBuilder<Postgres> = sqlx::QueryBuilder::new(sql);
+        let query = builder.build();
+
+        let pool = self.get_pool().await?;
+        match query.fetch_all(pool).await {
+            Err(e) => return Err(anyhow!(PostgresError::QueryError(e))),
+            Ok(results) => {
+                debug!("results: {:?}", results);
+                return Ok(());
+            }
+        }
     }
 }

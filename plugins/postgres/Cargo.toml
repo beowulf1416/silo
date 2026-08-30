@@ -9,6 +9,9 @@ serde = "*"
 async-channel = "*"
 async-trait = "*"
 
+anyhow = "*"
+thiserror = "*"
+
 gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
 sourceview5 = "*"
 
