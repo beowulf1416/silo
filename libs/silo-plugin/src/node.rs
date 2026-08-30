@@ -16,7 +16,7 @@ pub trait Node: std::fmt::Debug + Send + Sync {
     // fn clone_box(&self) -> Arc<dyn Node>;
 
     fn children(&self) -> Option<Vec<Arc<dyn Node>>>;
-    async fn children_async(&self) -> Result<Option<Vec<Arc<dyn Node>>>, &'static str>;
+    async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>>;
 
     fn context_menu(&self) -> Option<gio::Menu>;
 
@@ -38,6 +38,6 @@ pub trait Node: std::fmt::Debug + Send + Sync {
 // }
 
 #[async_trait]
-pub trait DataSourceNode: std::fmt::Debug {
-    async fn query(&self, sql: &str) -> Result<(), &'static str>;
+pub trait DataSourceNode: std::fmt::Debug + Send + Sync {
+    async fn query(&self, sql: &str) -> anyhow::Result<()>;
 }
