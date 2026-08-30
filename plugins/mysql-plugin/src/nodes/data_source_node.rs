@@ -42,23 +42,23 @@ impl Node for MySQLDataSourceNode {
     //     return Box::new(self.clone());
     // }
 
-    fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
-        debug!("MySQLDataSourceNode::children");
+    // fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
+    //     debug!("MySQLDataSourceNode::children");
 
-        let mut nodes: Vec<Arc<dyn Node>> = vec![];
+    //     let mut nodes: Vec<Arc<dyn Node>> = vec![];
 
-        // test data
-        let boxed: Arc<dyn Node> = Arc::new(SchemaTablesNode::new(Arc::clone(&self.settings)));
-        nodes.push(boxed);
+    //     // test data
+    //     let boxed: Arc<dyn Node> = Arc::new(SchemaTablesNode::new(Arc::clone(&self.settings)));
+    //     nodes.push(boxed);
 
-        let boxed: Arc<dyn Node> = Arc::new(SchemaProceduresNode::new(Arc::clone(&self.settings)));
-        nodes.push(boxed);
+    //     let boxed: Arc<dyn Node> = Arc::new(SchemaProceduresNode::new(Arc::clone(&self.settings)));
+    //     nodes.push(boxed);
 
-        let boxed: Arc<dyn Node> = Arc::new(SchemaFunctionsNode::new(Arc::clone(&self.settings)));
-        nodes.push(boxed);
+    //     let boxed: Arc<dyn Node> = Arc::new(SchemaFunctionsNode::new(Arc::clone(&self.settings)));
+    //     nodes.push(boxed);
 
-        return Some(nodes);
-    }
+    //     return Some(nodes);
+    // }
 
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
         return Err(anyhow::anyhow!("//todo not implemented"));

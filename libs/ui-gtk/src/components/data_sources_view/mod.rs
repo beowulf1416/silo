@@ -72,9 +72,9 @@ impl Node for LoadingNode {
         return "Loading...";
     }
 
-    fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
-        return None;
-    }
+    // fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
+    //     return None;
+    // }
 
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
         return Err(anyhow::anyhow!("//todo not implemented"));

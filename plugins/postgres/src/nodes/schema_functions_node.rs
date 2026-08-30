@@ -10,12 +10,17 @@ use silo_plugin::node::{DataSourceNode, Node};
 
 #[derive(Debug, Clone)]
 pub struct SchemaFunctionsNode {
-    pub settings: Arc<ConnectionSettings>,
+    pub pool: sqlx::Pool<sqlx::Postgres>,
+    // pub settings: Arc<ConnectionSettings>,
+    pub schema_name: String,
 }
 
 impl SchemaFunctionsNode {
-    pub fn new(settings: Arc<ConnectionSettings>) -> Self {
-        return Self { settings };
+    pub fn new(pool: sqlx::Pool<sqlx::Postgres>, schema_name: &String) -> Self {
+        return Self {
+            pool,
+            schema_name: schema_name.clone(),
+        };
     }
 }
 
@@ -29,11 +34,11 @@ impl Node for SchemaFunctionsNode {
     //     return Box::new(self.clone());
     // }
 
-    fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
-        debug!("SchemaFunctionsNode::children");
+    // fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
+    //     debug!("SchemaFunctionsNode::children");
 
-        return None;
-    }
+    //     return None;
+    // }
 
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
         return Err(anyhow::anyhow!("//todo not implemented"));

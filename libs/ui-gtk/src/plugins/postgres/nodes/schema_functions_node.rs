@@ -5,7 +5,15 @@ use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use crate::components::data_sources_view::node::Node;
 
 #[derive(Debug, Clone)]
-pub struct SchemaFunctionsNode {}
+pub struct SchemaFunctionsNode {
+    pub pool: sqlx::Pool<sqlx::Postgres>,
+}
+
+impl SchemaFunctionsNode {
+    pub fn new(pool: sqlx::Pool<sqlx::Postgres>) -> Self {
+        return Self { pool };
+    }
+}
 
 impl Node for SchemaFunctionsNode {
     fn name(&self) -> &str {

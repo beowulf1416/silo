@@ -199,7 +199,7 @@ impl DataSourcesView {
                     None
                 }
                 Ok(children) => {
-                    debug!("fetched children: {:?}", children);
+                    // debug!("fetched children: {:?}", children);
                     children
                 }
             }

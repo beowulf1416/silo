@@ -9,12 +9,14 @@ use crate::plugins::postgres::nodes::schema_tables_node::SchemaTablesNode;
 
 #[derive(Debug, Clone)]
 pub struct SchemaNode {
+    pub pool: sqlx::Pool<sqlx::Postgres>,
     pub name: String,
 }
 
 impl SchemaNode {
-    pub fn new(name: &str) -> Self {
+    pub fn new(pool: sqlx::Pool<sqlx::Postgres>, name: &str) -> Self {
         return Self {
+            pool,
             name: name.to_string(),
         };
     }

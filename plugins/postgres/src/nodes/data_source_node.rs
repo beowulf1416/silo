@@ -123,25 +123,25 @@ impl Node for PostgresDataSourceNode {
         return self.name.as_str();
     }
 
-    fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
-        debug!("PostgresDataSourceNode::children");
+    // fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
+    //     debug!("PostgresDataSourceNode::children");
 
-        match self.fetch_schemas() {
-            Err(e) => {
-                error!("unable to fetch schemas: {}", e);
-                return None;
-            }
-            Ok(schemas) => {
-                let mut result: Vec<Arc<dyn Node>> = vec![];
-                for schema in schemas {
-                    let arced: Arc<dyn Node> =
-                        Arc::new(SchemaNode::new(schema.as_str(), Arc::clone(&self.settings)));
-                    result.push(arced);
-                }
-                return Some(result);
-            }
-        }
-    }
+    //     match self.fetch_schemas() {
+    //         Err(e) => {
+    //             error!("unable to fetch schemas: {}", e);
+    //             return None;
+    //         }
+    //         Ok(schemas) => {
+    //             let mut result: Vec<Arc<dyn Node>> = vec![];
+    //             for schema in schemas {
+    //                 let arced: Arc<dyn Node> =
+    //                     Arc::new(SchemaNode::new(schema.as_str(), Arc::clone(&self.settings)));
+    //                 result.push(arced);
+    //             }
+    //             return Some(result);
+    //         }
+    //     }
+    // }
 
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
         debug!("PostgresDataSourceNode::children");
@@ -152,10 +152,12 @@ impl Node for PostgresDataSourceNode {
                 return Err(anyhow!(PostgresError::SchemaError));
             }
             Ok(schemas) => {
+                let pool = self.get_pool().await?;
+
                 let mut result: Vec<Arc<dyn Node>> = vec![];
                 for schema in schemas {
                     let boxed: Arc<dyn Node> =
-                        Arc::new(SchemaNode::new(schema.as_str(), Arc::clone(&self.settings)));
+                        Arc::new(SchemaNode::new(pool.clone(), schema.as_str()));
                     result.push(boxed);
                 }
                 return Ok(Some(result));

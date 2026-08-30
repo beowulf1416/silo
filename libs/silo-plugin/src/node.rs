@@ -15,7 +15,7 @@ pub trait Node: std::fmt::Debug + Send + Sync {
     // fn children(&self) -> gio::ListStore;
     // fn clone_box(&self) -> Arc<dyn Node>;
 
-    fn children(&self) -> Option<Vec<Arc<dyn Node>>>;
+    // fn children(&self) -> Option<Vec<Arc<dyn Node>>>;
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>>;
 
     fn context_menu(&self) -> Option<gio::Menu>;

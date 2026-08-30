@@ -28,11 +28,11 @@ impl Node for SchemaProceduresNode {
     //     return Box::new(self.clone());
     // }
 
-    fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
-        debug!("SchemaProceduresNode::children");
+    // fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
+    //     debug!("SchemaProceduresNode::children");
 
-        return None;
-    }
+    //     return None;
+    // }
 
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
         return Err(anyhow::anyhow!("//todo not implemented"));
