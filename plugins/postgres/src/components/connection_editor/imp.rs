@@ -7,6 +7,7 @@ use std::sync::Arc;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 
+use crate::get_runtime;
 use crate::nodes::ConnectionSettings;
 use crate::nodes::data_source_node::PostgresDataSourceNode;
 use silo_plugin::{ApplicationMessage, node::Node};
@@ -69,21 +70,41 @@ impl PostgresConnectionEditor {
         let user = user.to_string();
         let pw = pw.to_string();
 
-        std::thread::spawn(move || {
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(async move {
-                match attempt_connection(&db, &host, port, &user, &pw).await {
+        // std::thread::spawn(move || {
+        //     let rt = tokio::runtime::Runtime::new().unwrap();
+        //     rt.block_on(async move {
+        //         match attempt_connection(&db, &host, port, &user, &pw).await {
+        //             Err(e) => {
+        //                 let _ = sender.send(format!("{}", e)).await;
+        //             }
+        //             Ok(_) => {
+        //                 let _ = sender
+        //                     .send("Successfully connected to database".to_string())
+        //                     .await;
+        //             }
+        //         }
+        //     });
+        // });
+
+        let handle = get_runtime().spawn(async move {
+            return attempt_connection(&db, &host, port, &user, &pw).await;
+        });
+
+        glib::MainContext::default().spawn_local(glib::clone!(
+            #[weak(rename_to = this)]
+            self,
+            async move {
+                match handle.await {
                     Err(e) => {
-                        let _ = sender.send(format!("{}", e)).await;
+                        this.label_test.set_text(format!("{}", e).as_str());
                     }
                     Ok(_) => {
-                        let _ = sender
-                            .send("Successfully connected to database".to_string())
-                            .await;
+                        this.label_test
+                            .set_text("Successfully connected to database");
                     }
                 }
-            });
-        });
+            },
+        ));
     }
 }
 
