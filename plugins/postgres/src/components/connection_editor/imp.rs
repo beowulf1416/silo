@@ -22,23 +22,23 @@ pub struct PostgresConnectionEditor {
     actions: gio::SimpleActionGroup,
 
     // pub window: RefCell<Option<MainWindow>>,
-    pub sender: RefCell<Option<async_channel::Sender<ApplicationMessage>>>,
+    pub(super) sender: RefCell<Option<async_channel::Sender<ApplicationMessage>>>,
 
-    pub is_dirty: bool,
-    pub is_value: bool,
+    pub(super) is_dirty: bool,
+    pub(super) is_value: bool,
 
-    pub btn_save: gtk::Button,
-    pub btn_test: gtk::Button,
+    pub(super) btn_save: gtk::Button,
+    pub(super) btn_test: gtk::Button,
 
-    pub entry_name: gtk::Entry,
-    pub entry_db: gtk::Entry,
-    pub entry_host: gtk::Entry,
-    pub entry_port: gtk::SpinButton,
-    pub entry_user: gtk::Entry,
-    pub entry_pw: gtk::PasswordEntry,
-    pub entry_uri: gtk::Entry,
+    pub(super) entry_name: gtk::Entry,
+    pub(super) entry_db: gtk::Entry,
+    pub(super) entry_host: gtk::Entry,
+    pub(super) entry_port: gtk::SpinButton,
+    pub(super) entry_user: gtk::Entry,
+    pub(super) entry_pw: gtk::PasswordEntry,
+    pub(super) entry_uri: gtk::Entry,
 
-    pub label_test: gtk::Label,
+    pub(super) label_test: gtk::Label,
 }
 
 impl PostgresConnectionEditor {
@@ -48,22 +48,59 @@ impl PostgresConnectionEditor {
     //
 
     fn setup_actions(&self) {
+        debug!("setup_actions");
+
         let action = gio::SimpleAction::new("connection-test", None);
+        action.set_enabled(false);
         action.connect_activate(glib::clone!(
             #[weak(rename_to = window)]
             self,
             move |_action, _target| {
                 debug!("connection-test activated");
+
+                let db = window.entry_db.text().to_string();
+                let host = window.entry_host.text().to_string();
+                let port = window.entry_port.value_as_int() as u32;
+                let user = window.entry_user.text().to_string();
+                let pw = window.entry_pw.text().to_string();
+
+                window.test_connection_details(&db, &host, port, &user, &pw);
             }
         ));
         self.actions.add_action(&action);
 
         let action = gio::SimpleAction::new("connection-save", None);
+        action.set_enabled(false);
         action.connect_activate(glib::clone!(
             #[weak(rename_to = window)]
             self,
             move |_action, _target| {
                 debug!("connection-save activated");
+
+                let name = window.entry_name.text().to_string();
+                let db = window.entry_db.text().to_string();
+                let host = window.entry_host.text().to_string();
+                let port = window.entry_port.value_as_int() as u32;
+                let user = window.entry_user.text().to_string();
+                let pw = window.entry_pw.text().to_string();
+
+                let boxed: Arc<dyn Node> = Arc::new(PostgresDataSourceNode::new(
+                    name.clone().as_str(),
+                    ConnectionSettings {
+                        name,
+                        db,
+                        host,
+                        port,
+                        user,
+                        pw,
+                    },
+                ));
+                let _ = window
+                    .sender
+                    .borrow()
+                    .as_ref()
+                    .expect("//todo sender")
+                    .send_blocking(ApplicationMessage::DataSourceAdd(boxed));
             }
         ));
         self.actions.add_action(&action);
@@ -78,70 +115,239 @@ impl PostgresConnectionEditor {
             .action_set_enabled("win.data-source-save::postgres", self.is_dirty);
     }
 
-    pub fn test_connection_details(&self, db: &str, host: &str, port: u32, user: &str, pw: &str) {
-        debug!("test_connection_details");
-
-        // let (sender, receiver) = async_channel::unbounded::<String>();
-        // glib::MainContext::default().spawn_local(glib::clone!(
-        //     #[weak(rename_to = window)]
-        //     self,
-        //     async move {
-        //         while let Ok(msg) = receiver.recv().await {
-        //             window.label_test.set_text(&msg);
-        //         }
-        //     }
-        // ));
-
+    fn test_connection_details(&self, db: &str, host: &str, port: u32, user: &str, pw: &str) {
         let db = db.to_string();
         let host = host.to_string();
         // let port = port;
         let user = user.to_string();
         let pw = pw.to_string();
 
-        // std::thread::spawn(move || {
-        //     let rt = tokio::runtime::Runtime::new().unwrap();
-        //     rt.block_on(async move {
-        //         match attempt_connection(&db, &host, port, &user, &pw).await {
-        //             Err(e) => {
-        //                 let _ = sender.send(format!("{}", e)).await;
-        //             }
-        //             Ok(_) => {
-        //                 let _ = sender
-        //                     .send("Successfully connected to database".to_string())
-        //                     .await;
-        //             }
-        //         }
-        //     });
-        // });
+        if let Some(action) = self
+            .lookup_action("connection-test")
+            .and_then(|a| a.downcast::<gio::SimpleAction>().ok())
+        {
+            let handle = get_runtime().spawn(async move {
+                return attempt_connection(&db, &host, port, &user, &pw).await;
+            });
 
-        let handle = get_runtime().spawn(async move {
-            return attempt_connection(&db, &host, port, &user, &pw).await;
+            glib::MainContext::default().spawn_local(glib::clone!(
+                #[weak(rename_to = this)]
+                self,
+                async move {
+                    action.set_enabled(false);
+
+                    // handle.await returns a Result<Result<(), sqlx::Error>, JoinError>
+                    match handle.await {
+                        Err(e) => {
+                            error!("error when connecting to db: {}", e);
+                            this.label_test.set_text(format!("{}", e).as_str());
+                        }
+                        Ok(join_result) => match join_result {
+                            Err(e) => {
+                                error!("error when connecting to db: {}", e);
+                                this.label_test.set_text(format!("{}", e).as_str());
+                            }
+                            Ok(_) => {
+                                this.label_test
+                                    .set_text("Successfully connected to database");
+                            }
+                        },
+                    }
+                    action.set_enabled(true);
+                },
+            ));
+        } else {
+            error!("action connection-test not found");
+        }
+    }
+
+    pub fn setup_uri_feedback(&self) {
+        // update uri entry value when
+        // db, host, port, user change
+        let update_uri = {
+            let eh = self.entry_host.clone();
+            let ep = self.entry_port.clone();
+            let eu = self.entry_user.clone();
+            let ed = self.entry_db.clone();
+            let euri = self.entry_uri.clone();
+
+            move || {
+                let user = eu.text();
+                let host = eh.text();
+                let port = ep.text();
+                let db = ed.text();
+
+                let uri = format!("postgresql://{user}:[password]@{host}:{port}/{db}");
+                euri.set_text(&uri);
+            }
+        };
+
+        let update_uri_cloned = update_uri.clone();
+        self.entry_host.connect_changed(move |_| {
+            update_uri_cloned();
         });
 
-        glib::MainContext::default().spawn_local(glib::clone!(
-            #[weak(rename_to = this)]
-            self,
-            async move {
-                this.btn_test.set_sensitive(false);
-                this.btn_save.set_sensitive(false);
+        let update_uri_cloned = update_uri.clone();
+        self.entry_port.connect_changed(move |_| {
+            update_uri_cloned();
+        });
 
-                match handle.await {
-                    Err(e) => {
-                        this.label_test.set_text(format!("{}", e).as_str());
+        let update_uri_cloned = update_uri.clone();
+        self.entry_user.connect_changed(move |_| {
+            update_uri_cloned();
+        });
 
-                        this.btn_test.set_sensitive(true);
-                        this.btn_save.set_sensitive(true);
+        let update_uri_cloned = update_uri.clone();
+        self.entry_db.connect_changed(move |_| {
+            update_uri_cloned();
+        });
+    }
+
+    pub fn setup_handlers(&self) {
+        let entry_name_valid = std::rc::Rc::new(std::cell::Cell::new(false));
+        let entry_db_valid = std::rc::Rc::new(std::cell::Cell::new(false));
+        let entry_host_valid = std::rc::Rc::new(std::cell::Cell::new(false));
+        let entry_port_valid = std::rc::Rc::new(std::cell::Cell::new(false));
+        let entry_user_valid = std::rc::Rc::new(std::cell::Cell::new(false));
+        let entry_password_valid = std::rc::Rc::new(std::cell::Cell::new(false));
+
+        let action_test = self
+            .lookup_action("connection-test")
+            .and_then(|a| a.downcast::<gio::SimpleAction>().ok());
+
+        let action_save = self
+            .lookup_action("connection-save")
+            .and_then(|a| a.downcast::<gio::SimpleAction>().ok());
+
+        let action_toggle = {
+            let en_valid = entry_name_valid.clone();
+            let ed_valid = entry_db_valid.clone();
+            let eh_valid = entry_host_valid.clone();
+            let ep_valid = entry_port_valid.clone();
+            let eu_valid = entry_user_valid.clone();
+            let epw_valid = entry_password_valid.clone();
+            move || {
+                if let Some(action_test) = action_test.clone()
+                    && let Some(action_save) = action_save.clone()
+                {
+                    if en_valid.get()
+                        && ed_valid.get()
+                        && eh_valid.get()
+                        && ep_valid.get()
+                        && eu_valid.get()
+                        && epw_valid.get()
+                    {
+                        action_test.set_enabled(true);
+                        action_save.set_enabled(true);
+                    } else {
+                        action_test.set_enabled(false);
+                        action_save.set_enabled(false);
                     }
-                    Ok(_) => {
-                        this.label_test
-                            .set_text("Successfully connected to database");
-
-                        this.btn_test.set_sensitive(true);
-                        this.btn_save.set_sensitive(true);
-                    }
+                } else {
+                    error!("action not found action_toggle");
                 }
-            },
-        ));
+            }
+        };
+
+        let action_toggle_cloned = action_toggle.clone();
+        let entry_name_valid_cloned = entry_name_valid.clone();
+        self.entry_name.connect_changed(move |entry| {
+            let text = entry.text();
+            if text.is_empty() {
+                entry_name_valid_cloned.set(false);
+                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("error"));
+                entry.add_css_class("error");
+            } else {
+                entry_name_valid_cloned.set(true);
+                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("check"));
+                entry.remove_css_class("error");
+            }
+
+            action_toggle_cloned();
+        });
+
+        let action_toggle_cloned = action_toggle.clone();
+        let entry_db_valid_cloned = entry_db_valid.clone();
+        self.entry_db.connect_changed(move |entry| {
+            let text = entry.text();
+            if text.is_empty() {
+                entry_db_valid_cloned.set(false);
+                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("error"));
+                entry.add_css_class("error");
+            } else {
+                entry_db_valid_cloned.set(true);
+                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("check"));
+                entry.remove_css_class("error");
+            }
+
+            action_toggle_cloned();
+        });
+
+        let action_toggle_cloned = action_toggle.clone();
+        let entry_host_valid_cloned = entry_host_valid.clone();
+        self.entry_host.connect_changed(move |entry| {
+            let text = entry.text();
+            if text.is_empty() {
+                entry_host_valid_cloned.set(false);
+                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("error"));
+                entry.add_css_class("error");
+            } else {
+                entry_host_valid_cloned.set(true);
+                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("check"));
+                entry.remove_css_class("error");
+            }
+
+            action_toggle_cloned();
+        });
+
+        let action_toggle_cloned = action_toggle.clone();
+        let entry_port_valid_cloned = entry_port_valid.clone();
+        self.entry_port.connect_changed(move |entry| {
+            let text = entry.text();
+            if text.is_empty() {
+                entry_port_valid_cloned.set(false);
+                entry.add_css_class("error");
+            } else {
+                entry_port_valid_cloned.set(true);
+                entry.remove_css_class("error");
+            }
+
+            action_toggle_cloned();
+        });
+
+        let action_toggle_cloned = action_toggle.clone();
+        let entry_user_valid_cloned = entry_user_valid.clone();
+        self.entry_user.connect_changed(move |entry| {
+            let text = entry.text();
+            if text.is_empty() {
+                entry_user_valid_cloned.set(false);
+                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("error"));
+                entry.add_css_class("error");
+            } else {
+                entry_user_valid_cloned.set(true);
+                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("check"));
+                entry.remove_css_class("error");
+            }
+
+            action_toggle_cloned();
+        });
+
+        let action_toggle_cloned = action_toggle.clone();
+        let entry_password_valid_cloned = entry_password_valid.clone();
+        self.entry_pw.connect_changed(move |entry| {
+            let text = entry.text();
+            if text.is_empty() {
+                entry_password_valid_cloned.set(false);
+                // entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("error"));
+                entry.add_css_class("error");
+            } else {
+                entry_password_valid_cloned.set(true);
+                // entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("check"));
+                entry.remove_css_class("error");
+            }
+
+            action_toggle_cloned();
+        });
     }
 }
 
@@ -206,81 +412,17 @@ impl ObjectImpl for PostgresConnectionEditor {
         self.entry_uri.set_hexpand(true);
         self.entry_uri.set_editable(false);
 
-        // update uri entry value when
-        // db, host, port, user change
-        let update_uri = {
-            let eh = self.entry_host.clone();
-            let ep = self.entry_port.clone();
-            let eu = self.entry_user.clone();
-            let ed = self.entry_db.clone();
-            let euri = self.entry_uri.clone();
-
-            move || {
-                let user = eu.text();
-                let host = eh.text();
-                let port = ep.text();
-                let db = ed.text();
-
-                let uri = format!("postgresql://{user}:[password]@{host}:{port}/{db}");
-                euri.set_text(&uri);
-            }
-        };
-        let update_uri_1 = update_uri.clone();
-        let update_uri_2 = update_uri.clone();
-        let update_uri_3 = update_uri.clone();
-        let update_uri_4 = update_uri.clone();
-
-        self.entry_host.connect_changed(move |_| update_uri_1());
-        self.entry_port.connect_changed(move |_| update_uri_2());
-        self.entry_user.connect_changed(move |_| update_uri_3());
-        self.entry_db.connect_changed(move |_| update_uri_4());
+        self.setup_uri_feedback();
 
         self.btn_save.set_icon_name("save");
         self.btn_save.set_tooltip_text(Some("Save"));
-        self.btn_save.connect_clicked(glib::clone!(
-            #[weak(rename_to = editor)]
-            self,
-            move |_button| {
-                let boxed: Arc<dyn Node> = Arc::new(PostgresDataSourceNode::new(
-                    editor.entry_name.text().as_str(),
-                    ConnectionSettings {
-                        name: editor.entry_name.text().to_string(),
-                        db: editor.entry_db.text().to_string(),
-                        host: editor.entry_host.text().to_string(),
-                        port: editor.entry_port.value() as u32,
-                        user: editor.entry_user.text().to_string(),
-                        pw: editor.entry_pw.text().to_string(),
-                    },
-                ));
-                let _ = editor
-                    .sender
-                    .borrow()
-                    .as_ref()
-                    .expect("//todo sender")
-                    // .send(ApplicationMessage::DataSourceAdd(boxed));
-                    .send_blocking(ApplicationMessage::DataSourceAdd(boxed));
-            }
-        ));
+        self.btn_save
+            .set_action_name(Some("editor.connection-save"));
 
         self.btn_test.set_icon_name("connect");
         self.btn_test.set_tooltip_text(Some("Test connection"));
         self.btn_test
             .set_action_name(Some("editor.connection-test"));
-
-        // self.btn_test.connect_clicked(glib::clone!(
-        //     #[weak(rename_to = editor)]
-        //     self,
-        //     move |_button| {
-        //         debug!("//todo test button clicked");
-        //         editor.test_connection_details(
-        //             editor.entry_db.text().as_str(),
-        //             editor.entry_host.text().as_str(),
-        //             editor.entry_port.value() as u32,
-        //             editor.entry_user.text().as_str(),
-        //             editor.entry_pw.text().as_str(),
-        //         );
-        //     }
-        // ));
 
         let bar = gtk::ActionBar::builder().hexpand(true).build();
         bar.pack_start(&self.btn_save);
@@ -377,7 +519,7 @@ impl ObjectImpl for PostgresConnectionEditor {
         obj.append(&container);
 
         self.setup_actions();
-        debug!("setup_actions completed")
+        self.setup_handlers();
     }
 }
 
