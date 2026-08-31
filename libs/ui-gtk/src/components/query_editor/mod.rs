@@ -2,7 +2,12 @@ mod imp;
 
 use tracing::debug;
 
-use gtk::{gio, glib, prelude::*, subclass::prelude::*};
+use gtk::{
+    gio::{self, prelude::*},
+    glib,
+    prelude::*,
+    subclass::prelude::*,
+};
 
 // use crate::components::main_window::MainWindow;
 use silo_plugin::ApplicationMessage;
@@ -35,6 +40,11 @@ impl QueryEditor {
     pub fn set_data_sources(&self, sources: gio::ListStore) {
         let imp = self.imp();
         imp.set_model(sources);
+    }
+
+    pub fn execute(&self) {
+        let imp = self.imp();
+        imp.execute();
     }
 }
 

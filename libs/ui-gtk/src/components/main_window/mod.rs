@@ -11,6 +11,7 @@ use std::cell::Ref;
 use std::sync::Arc;
 
 use crate::App;
+use crate::components::editor_view::EditorView;
 
 use silo_plugin::node::{DataSourceNode, Node};
 use silo_plugin::{ApplicationMessage, StatusMessage};
@@ -96,6 +97,10 @@ impl MainWindow {
                 }
             }
         ));
+    }
+
+    pub fn editor_view(&self) -> EditorView {
+        return self.imp().ev.clone();
     }
 
     fn process_notifications(&self, msg: StatusMessage) {

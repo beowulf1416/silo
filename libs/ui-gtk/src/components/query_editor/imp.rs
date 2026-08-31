@@ -1,14 +1,17 @@
-use gtk::glib::Source;
+use gtk::ApplicationWindow;
 use tracing::{debug, error};
 
-use gtk::{gio, glib, prelude::*, subclass::prelude::*};
+use gtk::{
+    gio::{self, Action, prelude::*},
+    glib,
+    prelude::*,
+    subclass::prelude::*,
+};
 use std::cell::{Ref, RefCell};
 use std::sync::Arc;
-use std::vec::Vec;
 
 use sourceview5::prelude::*;
 
-// use crate::components::main_window::MainWindow;
 use silo_plugin::ApplicationMessage;
 use silo_plugin::node::{DataSourceNode, Node};
 
@@ -37,6 +40,82 @@ impl QueryEditor {
 
     pub fn set_model(&self, sources: gio::ListStore) {
         self.cbo_sources.set_model(Some(&sources.clone()))
+    }
+
+    pub fn execute(&self) {
+        if let Some(item) = self.cbo_sources.selected_item() {
+            let sql = self.get_current_statement();
+
+            if let Some(boxed) = item.downcast_ref::<glib::BoxedAnyObject>() {
+                let node_ref: Ref<Arc<dyn Node>> = boxed.borrow();
+                let node: &dyn Node = node_ref.as_ref();
+                let dsn_opt = node.into_DataSourceNode();
+
+                if let Some(dsn) = dsn_opt {
+                    let arc_dsn = Arc::clone(&dsn);
+
+                    let handle = get_runtime().spawn(async move {
+                        let value = sql.unwrap_or_default();
+
+                        let future = { arc_dsn.query(value.as_str()) };
+
+                        match future.await {
+                            Err(e) => {
+                                error!("unable to fetch children of node :{}", e);
+                                None
+                            }
+                            Ok(_) => {
+                                debug!("succeeded");
+                                Some("test")
+                            }
+                        }
+                    });
+
+                    let obj = self.obj();
+                    if let Some(mw) = obj.root() {
+                        if let Some(mw) = mw.downcast::<ApplicationWindow>().ok() {
+                            if let Some(action) = mw.lookup_action("execute") {
+                                if let Some(simple_action) =
+                                    action.downcast::<gio::SimpleAction>().ok()
+                                {
+                                    simple_action.set_enabled(false);
+                                }
+                            }
+                        }
+                    }
+
+                    let action = obj
+                        .root()
+                        .and_then(|r| r.downcast::<ApplicationWindow>().ok())
+                        .and_then(|mw| mw.lookup_action("execute"))
+                        .and_then(|a| a.downcast::<gio::SimpleAction>().ok());
+
+                    if let Some(action) = action {
+                        action.set_enabled(false);
+
+                        glib::MainContext::default().spawn_local(glib::clone!(
+                            #[weak(rename_to = this)]
+                            self,
+                            async move {
+                                match handle.await {
+                                    Err(e) => {
+                                        error!("unable to fetch children of node :{}", e);
+
+                                        action.set_enabled(true);
+                                    }
+                                    Ok(results) => {
+                                        debug!("succeeded");
+                                        this.add_result();
+
+                                        action.set_enabled(true);
+                                    }
+                                }
+                            }
+                        ));
+                    }
+                }
+            }
+        }
     }
 
     fn build_sources_drop_down(&self) {
@@ -103,67 +182,68 @@ impl QueryEditor {
         //     .css_classes(vec!["btn", "flat"])
         //     // .shortcut("Ctrl+Return")
         //     .build();
+        self.btn_execute.set_action_name(Some("win.query-execute"));
         self.btn_execute.set_icon_name("system-play-start");
         self.btn_execute.set_tooltip_text(Some("Execute"));
         self.btn_execute.set_css_classes(&vec!["btn", "flat"]);
 
-        self.btn_execute.connect_clicked(glib::clone!(
-            #[weak(rename_to = this)]
-            self,
-            move |_button| {
-                debug!("button execute clicked");
+        // self.btn_execute.connect_clicked(glib::clone!(
+        //     #[weak(rename_to = this)]
+        //     self,
+        //     move |_button| {
+        //         debug!("button execute clicked");
 
-                if let Some(item) = this.cbo_sources.selected_item() {
-                    let sql = this.get_current_statement();
-                    debug!("sql: {:?}", sql);
+        //         if let Some(item) = this.cbo_sources.selected_item() {
+        //             let sql = this.get_current_statement();
+        //             debug!("sql: {:?}", sql);
 
-                    if let Some(boxed) = item.downcast_ref::<glib::BoxedAnyObject>() {
-                        let node_ref: Ref<Arc<dyn Node>> = boxed.borrow();
-                        let node: &dyn Node = node_ref.as_ref();
-                        let dsn_opt = node.into_DataSourceNode();
+        //             if let Some(boxed) = item.downcast_ref::<glib::BoxedAnyObject>() {
+        //                 let node_ref: Ref<Arc<dyn Node>> = boxed.borrow();
+        //                 let node: &dyn Node = node_ref.as_ref();
+        //                 let dsn_opt = node.into_DataSourceNode();
 
-                        if let Some(dsn) = dsn_opt {
-                            let arc_dsn = Arc::clone(&dsn);
+        //                 if let Some(dsn) = dsn_opt {
+        //                     let arc_dsn = Arc::clone(&dsn);
 
-                            let handle = get_runtime().spawn(async move {
-                                let value = sql.unwrap_or_default();
+        //                     let handle = get_runtime().spawn(async move {
+        //                         let value = sql.unwrap_or_default();
 
-                                let future = { arc_dsn.query(value.as_str()) };
+        //                         let future = { arc_dsn.query(value.as_str()) };
 
-                                match future.await {
-                                    Err(e) => {
-                                        error!("unable to fetch children of node :{}", e);
-                                        None
-                                    }
-                                    Ok(_) => {
-                                        debug!("succeeded");
-                                        Some("test")
-                                    }
-                                }
-                            });
+        //                         match future.await {
+        //                             Err(e) => {
+        //                                 error!("unable to fetch children of node :{}", e);
+        //                                 None
+        //                             }
+        //                             Ok(_) => {
+        //                                 debug!("succeeded");
+        //                                 Some("test")
+        //                             }
+        //                         }
+        //                     });
 
-                            this.btn_execute.set_sensitive(false);
+        //                     this.btn_execute.set_sensitive(false);
 
-                            glib::MainContext::default().spawn_local(async move {
-                                match handle.await {
-                                    Err(e) => {
-                                        error!("unable to fetch children of node :{}", e);
+        //                     glib::MainContext::default().spawn_local(async move {
+        //                         match handle.await {
+        //                             Err(e) => {
+        //                                 error!("unable to fetch children of node :{}", e);
 
-                                        this.btn_execute.set_sensitive(true);
-                                    }
-                                    Ok(results) => {
-                                        debug!("succeeded");
-                                        this.add_result();
+        //                                 this.btn_execute.set_sensitive(true);
+        //                             }
+        //                             Ok(results) => {
+        //                                 debug!("succeeded");
+        //                                 this.add_result();
 
-                                        this.btn_execute.set_sensitive(true);
-                                    }
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-        ));
+        //                                 this.btn_execute.set_sensitive(true);
+        //                             }
+        //                         }
+        //                     });
+        //                 }
+        //             }
+        //         }
+        //     }
+        // ));
 
         self.build_sources_drop_down();
 
@@ -173,7 +253,7 @@ impl QueryEditor {
             .build();
         action_bar.pack_start(&btn_save);
         action_bar.pack_start(&separator);
-        action_bar.pack_start(&btn_execute);
+        action_bar.pack_start(&self.btn_execute);
         action_bar.pack_end(&self.cbo_sources);
 
         return action_bar;
@@ -380,3 +460,5 @@ impl ObjectImpl for QueryEditor {
 impl WidgetImpl for QueryEditor {}
 
 impl BoxImpl for QueryEditor {}
+
+// impl ActionMap for QueryEditor {}

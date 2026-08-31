@@ -1,8 +1,11 @@
 mod imp;
 
+use tracing::debug;
+
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 // use crate::plugins::Plugin;
+use crate::components::query_editor::QueryEditor;
 use silo_plugin::ApplicationMessage;
 
 glib::wrapper! {
@@ -15,6 +18,22 @@ glib::wrapper! {
 impl EditorView {
     pub fn new() -> Self {
         glib::Object::builder().build()
+    }
+
+    pub fn get_current_query_editor(&self) -> Option<QueryEditor> {
+        let imp = self.imp();
+        debug!(
+            "get_current_editor {:?}",
+            imp.nb.nth_page(imp.nb.current_page())
+        );
+
+        if let Some(widget) = imp.nb.nth_page(imp.nb.current_page()) {
+            if let Ok(query_editor) = widget.downcast::<QueryEditor>() {
+                return Some(query_editor);
+            }
+        }
+
+        return None;
     }
 
     pub fn add_editor(
