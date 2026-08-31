@@ -72,17 +72,6 @@ impl QueryEditor {
                     });
 
                     let obj = self.obj();
-                    if let Some(mw) = obj.root() {
-                        if let Some(mw) = mw.downcast::<ApplicationWindow>().ok() {
-                            if let Some(action) = mw.lookup_action("execute") {
-                                if let Some(simple_action) =
-                                    action.downcast::<gio::SimpleAction>().ok()
-                                {
-                                    simple_action.set_enabled(false);
-                                }
-                            }
-                        }
-                    }
 
                     let action = obj
                         .root()
