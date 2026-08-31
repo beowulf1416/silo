@@ -94,13 +94,22 @@ impl PostgresConnectionEditor {
             #[weak(rename_to = this)]
             self,
             async move {
+                this.btn_test.set_sensitive(false);
+                this.btn_save.set_sensitive(false);
+
                 match handle.await {
                     Err(e) => {
                         this.label_test.set_text(format!("{}", e).as_str());
+
+                        this.btn_test.set_sensitive(true);
+                        this.btn_save.set_sensitive(true);
                     }
                     Ok(_) => {
                         this.label_test
                             .set_text("Successfully connected to database");
+
+                        this.btn_test.set_sensitive(true);
+                        this.btn_save.set_sensitive(true);
                     }
                 }
             },

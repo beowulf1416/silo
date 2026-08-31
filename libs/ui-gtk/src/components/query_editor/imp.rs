@@ -4,6 +4,7 @@ use tracing::{debug, error};
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use std::cell::{Ref, RefCell};
 use std::sync::Arc;
+use std::vec::Vec;
 
 use sourceview5::prelude::*;
 
@@ -23,6 +24,7 @@ pub struct QueryEditor {
     pub(super) sender: RefCell<Option<async_channel::Sender<ApplicationMessage>>>,
 
     // pub(super) sources: RefCell<Option<gio::ListStore>>,
+    pub(super) btn_execute: gtk::Button,
     pub(super) cbo_sources: gtk::DropDown,
     pub(super) nb: gtk::Notebook,
     pub(super) view: sourceview5::View,
@@ -94,15 +96,18 @@ impl QueryEditor {
             .orientation(gtk::Orientation::Horizontal)
             .build();
 
-        let btn_execute = gtk::Button::builder()
-            // .label("Execute")
-            .icon_name("system-play-start")
-            .tooltip_text("Execute")
-            .css_classes(vec!["btn", "flat"])
-            // .shortcut("Ctrl+Return")
-            .build();
+        // let btn_execute = gtk::Button::builder()
+        //     // .label("Execute")
+        //     .icon_name("system-play-start")
+        //     .tooltip_text("Execute")
+        //     .css_classes(vec!["btn", "flat"])
+        //     // .shortcut("Ctrl+Return")
+        //     .build();
+        self.btn_execute.set_icon_name("system-play-start");
+        self.btn_execute.set_tooltip_text(Some("Execute"));
+        self.btn_execute.set_css_classes(&vec!["btn", "flat"]);
 
-        btn_execute.connect_clicked(glib::clone!(
+        self.btn_execute.connect_clicked(glib::clone!(
             #[weak(rename_to = this)]
             self,
             move |_button| {
@@ -137,14 +142,20 @@ impl QueryEditor {
                                 }
                             });
 
+                            this.btn_execute.set_sensitive(false);
+
                             glib::MainContext::default().spawn_local(async move {
                                 match handle.await {
                                     Err(e) => {
                                         error!("unable to fetch children of node :{}", e);
+
+                                        this.btn_execute.set_sensitive(true);
                                     }
                                     Ok(results) => {
                                         debug!("succeeded");
                                         this.add_result();
+
+                                        this.btn_execute.set_sensitive(true);
                                     }
                                 }
                             });
