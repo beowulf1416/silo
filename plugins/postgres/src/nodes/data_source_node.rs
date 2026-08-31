@@ -38,48 +38,6 @@ impl PostgresDataSourceNode {
         };
     }
 
-    fn fetch_schemas(&self) -> Result<Vec<String>, &'static str> {
-        let user = self.settings.user.clone();
-        let pw = self.settings.pw.clone();
-        let host = self.settings.host.clone();
-        let port = self.settings.port.clone();
-        let db = self.settings.name.clone();
-
-        let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
-
-        let rt = crate::get_runtime();
-        return rt.block_on(async {
-            debug!("fetching schemas for uri: {}", uri);
-
-            match PgPoolOptions::new().max_connections(1).connect(&uri).await {
-                Err(e) => {
-                    error!(
-                        "an error occured while trying to connect to the database: {}",
-                        e
-                    );
-                    return Err("an error occured while trying to connect to the databse");
-                }
-                Ok(pool) => {
-                    let sql = "select schema_name from information_schema.schemata";
-
-                    match sqlx::query(sql).fetch_all(&pool).await {
-                        Err(e) => {
-                            error!("an error occured while fetching schemas: {}", e);
-                            return Err("an error occured while fetching schemas");
-                        }
-                        Ok(results) => {
-                            let schemas: Vec<String> = results
-                                .into_iter()
-                                .map(|r| r.get::<String, _>("schema_name"))
-                                .collect();
-                            return Ok(schemas);
-                        }
-                    }
-                }
-            }
-        });
-    }
-
     async fn get_pool(&self) -> anyhow::Result<&Pool<Postgres>> {
         match self
             .pool
@@ -122,26 +80,6 @@ impl Node for PostgresDataSourceNode {
     fn name(&self) -> &str {
         return self.name.as_str();
     }
-
-    // fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
-    //     debug!("PostgresDataSourceNode::children");
-
-    //     match self.fetch_schemas() {
-    //         Err(e) => {
-    //             error!("unable to fetch schemas: {}", e);
-    //             return None;
-    //         }
-    //         Ok(schemas) => {
-    //             let mut result: Vec<Arc<dyn Node>> = vec![];
-    //             for schema in schemas {
-    //                 let arced: Arc<dyn Node> =
-    //                     Arc::new(SchemaNode::new(schema.as_str(), Arc::clone(&self.settings)));
-    //                 result.push(arced);
-    //             }
-    //             return Some(result);
-    //         }
-    //     }
-    // }
 
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
         debug!("PostgresDataSourceNode::children");
@@ -192,10 +130,6 @@ impl Node for PostgresDataSourceNode {
         return Some(menu);
     }
 
-    // fn as_any(&self) -> &dyn std::any::Any {
-    //     return self;
-    // }
-
     fn into_DataSourceNode(&self) -> Option<Arc<dyn DataSourceNode>> {
         return Some(Arc::new(self.clone()));
     }
@@ -217,5 +151,15 @@ impl DataSourceNode for PostgresDataSourceNode {
                 return Ok(());
             }
         }
+    }
+
+    fn get_configuration(&self) -> serde_json::Value {
+        return serde_json::json!({
+            "name": self.settings.name.clone(),
+            "host": self.settings.host.clone(),
+            "port": self.settings.port.clone(),
+            "user": self.settings.user.clone(),
+            "pw": self.settings.pw.clone(),
+        });
     }
 }

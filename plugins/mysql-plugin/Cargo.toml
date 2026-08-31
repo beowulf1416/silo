@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 tracing = "*"
 serde = "*"
+serde_json = "*"
 async-channel = "*"
 async-trait = "*"
 

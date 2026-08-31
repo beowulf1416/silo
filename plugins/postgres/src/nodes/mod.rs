@@ -9,6 +9,7 @@ pub mod table_node;
 #[derive(Debug, Clone)]
 pub struct ConnectionSettings {
     pub name: String,
+    pub db: String,
     pub host: String,
     pub port: u32,
     pub user: String,

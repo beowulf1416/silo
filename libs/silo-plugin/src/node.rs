@@ -40,4 +40,6 @@ pub trait Node: std::fmt::Debug + Send + Sync {
 #[async_trait]
 pub trait DataSourceNode: std::fmt::Debug + Send + Sync {
     async fn query(&self, sql: &str) -> anyhow::Result<()>;
+
+    fn get_configuration(&self) -> serde_json::Value;
 }

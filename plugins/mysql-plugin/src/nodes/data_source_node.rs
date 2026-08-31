@@ -36,30 +36,6 @@ impl Node for MySQLDataSourceNode {
         return self.name.as_str();
     }
 
-    // fn clone_box(&self) -> Box<dyn Node> {
-    //     debug!("MySQLDataSourceNode::clone_box");
-
-    //     return Box::new(self.clone());
-    // }
-
-    // fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
-    //     debug!("MySQLDataSourceNode::children");
-
-    //     let mut nodes: Vec<Arc<dyn Node>> = vec![];
-
-    //     // test data
-    //     let boxed: Arc<dyn Node> = Arc::new(SchemaTablesNode::new(Arc::clone(&self.settings)));
-    //     nodes.push(boxed);
-
-    //     let boxed: Arc<dyn Node> = Arc::new(SchemaProceduresNode::new(Arc::clone(&self.settings)));
-    //     nodes.push(boxed);
-
-    //     let boxed: Arc<dyn Node> = Arc::new(SchemaFunctionsNode::new(Arc::clone(&self.settings)));
-    //     nodes.push(boxed);
-
-    //     return Some(nodes);
-    // }
-
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
         return Err(anyhow::anyhow!("//todo not implemented"));
     }
@@ -86,15 +62,21 @@ impl Node for MySQLDataSourceNode {
     fn into_DataSourceNode(&self) -> Option<Arc<dyn DataSourceNode>> {
         return Some(Arc::new(self.clone()));
     }
-
-    // fn as_any(&self) -> &dyn std::any::Any {
-    //     return self;
-    // }
 }
 
 #[async_trait]
 impl DataSourceNode for MySQLDataSourceNode {
     async fn query(&self, sql: &str) -> anyhow::Result<()> {
         return Err(anyhow::anyhow!("//todo not implemented"));
+    }
+
+    fn get_configuration(&self) -> serde_json::Value {
+        return serde_json::json!({
+            "name": self.settings.name.clone(),
+            "host": self.settings.host.clone(),
+            "port": self.settings.port.clone(),
+            "user": self.settings.user.clone(),
+            "pw": self.settings.pw.clone(),
+        });
     }
 }

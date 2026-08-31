@@ -186,7 +186,8 @@ impl ObjectImpl for PostgresConnectionEditor {
                 let boxed: Arc<dyn Node> = Arc::new(PostgresDataSourceNode::new(
                     editor.entry_name.text().as_str(),
                     ConnectionSettings {
-                        name: editor.entry_db.text().to_string(),
+                        name: editor.entry_name.text().to_string(),
+                        db: editor.entry_db.text().to_string(),
                         host: editor.entry_host.text().to_string(),
                         port: editor.entry_port.value() as u32,
                         user: editor.entry_user.text().to_string(),
