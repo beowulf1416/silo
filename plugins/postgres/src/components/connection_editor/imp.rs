@@ -53,16 +53,16 @@ impl PostgresConnectionEditor {
     pub fn test_connection_details(&self, db: &str, host: &str, port: u32, user: &str, pw: &str) {
         debug!("test_connection_details");
 
-        let (sender, receiver) = async_channel::unbounded::<String>();
-        glib::MainContext::default().spawn_local(glib::clone!(
-            #[weak(rename_to = window)]
-            self,
-            async move {
-                while let Ok(msg) = receiver.recv().await {
-                    window.label_test.set_text(&msg);
-                }
-            }
-        ));
+        // let (sender, receiver) = async_channel::unbounded::<String>();
+        // glib::MainContext::default().spawn_local(glib::clone!(
+        //     #[weak(rename_to = window)]
+        //     self,
+        //     async move {
+        //         while let Ok(msg) = receiver.recv().await {
+        //             window.label_test.set_text(&msg);
+        //         }
+        //     }
+        // ));
 
         let db = db.to_string();
         let host = host.to_string();
