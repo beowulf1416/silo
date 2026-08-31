@@ -53,10 +53,6 @@ pub struct MainWindow {
 }
 
 impl MainWindow {
-    // fn app(&self) -> App {
-    //     return self.app;
-    // }
-
     // pub fn set_workspace_path(&self, new_path: String) {
     //     self.app
     //         .borrow()
@@ -81,7 +77,7 @@ impl MainWindow {
             .expect("sender is not set")
             .clone();
 
-        glib::MainContext::default().spawn(async move {
+        glib::MainContext::default().spawn_local(async move {
             let _ = sender.send(message).await;
         });
     }
@@ -101,53 +97,10 @@ impl MainWindow {
 
     fn add_actions(&self) {
         let obj = self.obj().clone();
-
-        // let action_group = gio::SimpleActionGroup::new();
-
-        // let quit_action = crate::actions::quit::quit_action(&obj);
-        // obj.add_action(&quit_action);
-
-        // let data_source_add_action = crate::actions::data_source_add::data_source_add_action(&obj);
-        // obj.add_action(&data_source_add_action);
-
-        // let data_source_remove_action =
-        //     crate::actions::data_source_remove::data_source_remove_action(&obj);
-        // obj.add_action(&data_source_remove_action);
-
-        // let action = crate::actions::workspace_open_action::workspace_open_action(&obj);
-        // obj.add_action(&action);
-
         crate::actions::setup_actions(&obj);
     }
 
-    fn setup_action_handlers(&self) {
-        // self.open_workspace_button.connect_clicked(move |btn| {
-        //     debug!("Open Workspace button clicked");
-        //     btn.activate_action("win.workspace.open", None);
-        // });
-
-        // self.connect_close_request
-    }
-
-    // pub fn send(&self, msg: MainWindowInputMessage) {
-    //     debug!("send (imp)");
-    //     if let Some(sender) = self.sender.borrow().as_ref() {
-    //         let _ = sender.send_blocking(msg);
-    //     }
-    // }
-
-    // pub fn data_source_add(&self, dsn: Box<dyn Node>) {
-    //     // self.dsv.data_source_add(dsn);
-    //     //
-    //     let sources = self.data_sources();
-    //     sources.append(&glib::BoxedAnyObject::new(dsn));
-    // }
-
-    // pub fn data_sources(&self) -> gio::ListStore {
-
-    //     return self.dsv.sources();
-    // }
-    //
+    fn setup_action_handlers(&self) {}
 
     fn data_sources(&self) -> gio::ListStore {
         let mut sg = self.data_sources.borrow_mut();
@@ -166,7 +119,6 @@ impl MainWindow {
     }
 
     fn build_status_bar(&self) -> gtk::Box {
-        // let info = gtk::Label::builder().label("Ready").build();
         self.info.set_label(&"Ready");
         self.info.set_height_request(40);
 

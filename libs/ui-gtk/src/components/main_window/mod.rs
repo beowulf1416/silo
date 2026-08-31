@@ -1,6 +1,8 @@
 mod imp;
 
 use async_channel::Receiver;
+use gio::prelude::ActionGroupExt;
+use gtk::glib::bitflags::serde;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use tracing::{debug, error, warn};
 
@@ -18,14 +20,6 @@ use crate::components;
 // type PluginFactory = fn() -> Box<dyn Plugin>;
 type PluginName = String;
 type WorkspacePath = String;
-
-// #[derive(Debug, Clone)]
-// pub enum MainWindowInputMessage {
-//     CloseRequested,
-//     WorkspaceChanged(WorkspacePath),
-//     NewDataSourceRequest(PluginName),
-//     DataSourceAdd(Box<dyn Node>),
-// }
 
 glib::wrapper! {
     pub struct MainWindow(ObjectSubclass<imp::MainWindow>)
@@ -135,7 +129,13 @@ impl MainWindow {
             }
             ApplicationMessage::WorkspaceSaveRequested => {
                 debug!("//todo workspace save requested");
-                self.workspace_save();
+
+                if let Err(e) = self.workspace_save() {
+                    error!("workspace save failed: {}", e);
+
+                    let imp = self.imp();
+                    imp.notify(StatusMessage::Error(format!("{}", e)));
+                }
             }
             ApplicationMessage::NewDataSourceRequested(plugin_name) => {
                 debug!(
@@ -202,13 +202,38 @@ impl MainWindow {
             .set_workspace_path(path.clone());
     }
 
-    fn workspace_save(&self) {
+    fn workspace_save(&self) -> anyhow::Result<()> {
         debug!("workspace_save");
 
+        // check if workspace_path is set
         let imp = self.imp();
+        let mut workspace_path = imp
+            .app
+            .borrow()
+            .clone()
+            .expect("expecting App")
+            .workspace_path();
+        debug!("workspace_path 1: {:?}", workspace_path);
+
+        if workspace_path.is_none() {
+            // let user choose a workspace path
+            if let Some(action) = self.lookup_action("workspace-open") {
+                action.activate(None);
+            }
+
+            workspace_path = imp
+                .app
+                .borrow()
+                .clone()
+                .expect("expecting App")
+                .workspace_path();
+
+            debug!("workspace_path 2: {:?}", workspace_path);
+        };
+
         let sources = self.data_sources();
 
-        let dsns: Vec<Arc<dyn DataSourceNode>> = sources
+        let dsns: std::collections::HashMap<String, serde_json::Value> = sources
             .iter::<glib::BoxedAnyObject>()
             .map(|item| {
                 let result = {
@@ -217,11 +242,23 @@ impl MainWindow {
                 };
                 let node_ref: Ref<Arc<dyn Node>> = result.borrow();
                 let node: &dyn Node = node_ref.as_ref();
-                node.into_DataSourceNode()
+                let dsn = node.into_DataSourceNode();
+                (node.name().to_string(), dsn)
             })
-            .filter(|item| item.is_some())
-            .map(|item| item.unwrap())
+            .filter(|item| item.1.is_some())
+            .map(|item| (item.0.clone(), item.1.as_ref().unwrap().get_configuration()))
             .collect();
-        debug!("{:?}", dsns);
+
+        if let Some(path) = workspace_path {
+            let f = format!("{}/data_sources.json", path);
+            let mut file = std::fs::File::create(std::path::Path::new(&f))?;
+            serde_json::to_writer(&mut file, &dsns)?;
+
+            imp.notify(StatusMessage::Info("Workspace saved".to_string()));
+        } else {
+            return Err(anyhow::anyhow!("Workspace path not set"));
+        }
+
+        return Ok(());
     }
 }

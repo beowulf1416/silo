@@ -101,6 +101,7 @@ impl QueryEditor {
             .css_classes(vec!["btn", "flat"])
             // .shortcut("Ctrl+Return")
             .build();
+
         btn_execute.connect_clicked(glib::clone!(
             #[weak(rename_to = this)]
             self,
@@ -141,8 +142,9 @@ impl QueryEditor {
                                     Err(e) => {
                                         error!("unable to fetch children of node :{}", e);
                                     }
-                                    Ok(_) => {
+                                    Ok(results) => {
                                         debug!("succeeded");
+                                        this.add_result();
                                     }
                                 }
                             });
@@ -208,6 +210,64 @@ impl QueryEditor {
                 .build();
             tagtbl.add(&tag);
         }
+    }
+
+    fn add_result(&self) {
+        // tab header
+        let icon = gtk::Image::builder()
+            .icon_name("folder-visiting-symbolic")
+            .build();
+
+        let label = gtk::Label::builder().label("result").build();
+
+        let btn_close = gtk::Button::builder()
+            .tooltip_text("close")
+            .icon_name("window-close-symbolic")
+            .css_classes(vec!["btn", "flat"])
+            .build();
+
+        let th = gtk::Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .spacing(5)
+            .build();
+        th.append(&icon);
+        th.append(&label);
+        th.append(&btn_close);
+
+        let cbo_sources = gtk::DropDown::builder()
+            .enable_search(false)
+            .show_arrow(true)
+            .build();
+
+        let btn_export = gtk::Button::builder()
+            .tooltip_text("Export")
+            .icon_name("export-symbolic")
+            .css_classes(vec!["btn", "flat"])
+            .build();
+
+        let bar = gtk::ActionBar::builder().hexpand(true).build();
+        bar.pack_end(&cbo_sources);
+        bar.pack_end(&btn_export);
+
+        let lv = gtk::ColumnView::builder().build();
+
+        let sw = gtk::ScrolledWindow::builder()
+            .hexpand(true)
+            .vexpand(true)
+            .has_frame(true)
+            .child(&lv)
+            .build();
+
+        let container = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .hexpand(true)
+            .vexpand(true)
+            .build();
+
+        container.append(&bar);
+        container.append(&sw);
+
+        self.nb.append_page(&container, Some(&th));
     }
 
     fn get_current_statement(&self) -> Option<String> {

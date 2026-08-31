@@ -83,6 +83,11 @@ impl App {
         let imp = self.imp();
         imp.set_workspace_path(new_path);
     }
+
+    pub fn workspace_path(&self) -> Option<String> {
+        let imp = self.imp();
+        return imp.workspace_path.borrow().clone();
+    }
 }
 
 impl Default for App {
