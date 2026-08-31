@@ -19,6 +19,8 @@ enum TestMessage {
 
 #[derive(Debug, Default)]
 pub struct PostgresConnectionEditor {
+    actions: gio::SimpleActionGroup,
+
     // pub window: RefCell<Option<MainWindow>>,
     pub sender: RefCell<Option<async_channel::Sender<ApplicationMessage>>>,
 
@@ -43,6 +45,32 @@ impl PostgresConnectionEditor {
     // pub fn set_main_window(&self, window: &MainWindow) {
     //     self.window.replace(Some(window.clone()));
     // }
+    //
+
+    fn setup_actions(&self) {
+        let action = gio::SimpleAction::new("connection-test", None);
+        action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_action, _target| {
+                debug!("connection-test activated");
+            }
+        ));
+        self.actions.add_action(&action);
+
+        let action = gio::SimpleAction::new("connection-save", None);
+        action.connect_activate(glib::clone!(
+            #[weak(rename_to = window)]
+            self,
+            move |_action, _target| {
+                debug!("connection-save activated");
+            }
+        ));
+        self.actions.add_action(&action);
+
+        self.obj()
+            .insert_action_group("editor", Some(&self.actions));
+    }
 
     pub fn set_is_dirty(&mut self, value: bool) {
         self.is_dirty = value;
@@ -236,20 +264,23 @@ impl ObjectImpl for PostgresConnectionEditor {
 
         self.btn_test.set_icon_name("connect");
         self.btn_test.set_tooltip_text(Some("Test connection"));
-        self.btn_test.connect_clicked(glib::clone!(
-            #[weak(rename_to = editor)]
-            self,
-            move |_button| {
-                debug!("//todo test button clicked");
-                editor.test_connection_details(
-                    editor.entry_db.text().as_str(),
-                    editor.entry_host.text().as_str(),
-                    editor.entry_port.value() as u32,
-                    editor.entry_user.text().as_str(),
-                    editor.entry_pw.text().as_str(),
-                );
-            }
-        ));
+        self.btn_test
+            .set_action_name(Some("editor.connection-test"));
+
+        // self.btn_test.connect_clicked(glib::clone!(
+        //     #[weak(rename_to = editor)]
+        //     self,
+        //     move |_button| {
+        //         debug!("//todo test button clicked");
+        //         editor.test_connection_details(
+        //             editor.entry_db.text().as_str(),
+        //             editor.entry_host.text().as_str(),
+        //             editor.entry_port.value() as u32,
+        //             editor.entry_user.text().as_str(),
+        //             editor.entry_pw.text().as_str(),
+        //         );
+        //     }
+        // ));
 
         let bar = gtk::ActionBar::builder().hexpand(true).build();
         bar.pack_start(&self.btn_save);
@@ -344,9 +375,26 @@ impl ObjectImpl for PostgresConnectionEditor {
         container.append(&grid);
 
         obj.append(&container);
+
+        self.setup_actions();
+        debug!("setup_actions completed")
     }
 }
 
 impl WidgetImpl for PostgresConnectionEditor {}
 
 impl BoxImpl for PostgresConnectionEditor {}
+
+impl ActionMapImpl for PostgresConnectionEditor {
+    fn add_action(&self, action: &gio::Action) {
+        self.actions.add_action(action);
+    }
+
+    fn remove_action(&self, action_name: &str) {
+        self.actions.remove_action(action_name);
+    }
+
+    fn lookup_action(&self, name: &str) -> Option<gio::Action> {
+        self.actions.lookup_action(name)
+    }
+}

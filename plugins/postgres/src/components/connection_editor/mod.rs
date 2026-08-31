@@ -9,7 +9,7 @@ use silo_plugin::ApplicationMessage;
 glib::wrapper! {
     pub struct PostgresConnectionEditor(ObjectSubclass<imp::PostgresConnectionEditor>)
         @extends gtk::Widget, gtk::Box,
-        @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget
+        @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget, gio::ActionMap
     ;
 }
 

@@ -11,7 +11,7 @@ pub fn query_execute_action(mw: &MainWindow) -> gio::SimpleAction {
     action.connect_activate(glib::clone!(
         #[weak]
         mw,
-        move |_action, _none| {
+        move |_action, _target| {
             // debug!("query_execute_action activated {:?} {:?}", a, b);
 
             let ev = mw.editor_view();
