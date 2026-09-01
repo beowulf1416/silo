@@ -7,13 +7,16 @@ use gtk::{
     prelude::*,
     subclass::prelude::*,
 };
-use std::cell::{Ref, RefCell};
 use std::sync::Arc;
+use std::{
+    cell::{Ref, RefCell},
+    result,
+};
 
 use sourceview5::prelude::*;
 
 use silo_plugin::ApplicationMessage;
-use silo_plugin::node::{DataSourceNode, Node};
+use silo_plugin::node::{DataSourceNode, Node, QueryResult};
 
 use crate::get_runtime;
 
@@ -31,6 +34,7 @@ pub struct QueryEditor {
     pub(super) cbo_sources: gtk::DropDown,
     pub(super) nb: gtk::Notebook,
     pub(super) view: sourceview5::View,
+    pub(super) data_sources: RefCell<Option<gio::ListStore>>,
 }
 
 impl QueryEditor {
@@ -39,10 +43,13 @@ impl QueryEditor {
     // }
 
     pub fn set_model(&self, sources: gio::ListStore) {
+        self.data_sources.replace(Some(sources.clone()));
+
         self.cbo_sources.set_model(Some(&sources.clone()))
     }
 
     pub fn execute(&self) {
+        debug!("executing...");
         if let Some(item) = self.cbo_sources.selected_item() {
             let sql = self.get_current_statement();
 
@@ -61,12 +68,12 @@ impl QueryEditor {
 
                         match future.await {
                             Err(e) => {
-                                error!("unable to fetch children of node :{}", e);
+                                error!("an error occured while executing query: {}", e);
                                 None
                             }
-                            Ok(_) => {
-                                debug!("succeeded");
-                                Some("test")
+                            Ok(result) => {
+                                debug!("succeeded 1");
+                                Some(result)
                             }
                         }
                     });
@@ -76,7 +83,7 @@ impl QueryEditor {
                     let action = obj
                         .root()
                         .and_then(|r| r.downcast::<ApplicationWindow>().ok())
-                        .and_then(|mw| mw.lookup_action("execute"))
+                        .and_then(|mw| mw.lookup_action("query-execute"))
                         .and_then(|a| a.downcast::<gio::SimpleAction>().ok());
 
                     if let Some(action) = action {
@@ -88,19 +95,21 @@ impl QueryEditor {
                             async move {
                                 match handle.await {
                                     Err(e) => {
-                                        error!("unable to fetch children of node :{}", e);
+                                        error!("unable to execute query :{}", e);
 
                                         action.set_enabled(true);
                                     }
-                                    Ok(results) => {
-                                        debug!("succeeded");
-                                        this.add_result();
+                                    Ok(result) => {
+                                        debug!("succeeded 2");
+                                        this.add_result(&result);
 
                                         action.set_enabled(true);
                                     }
                                 }
                             }
                         ));
+                    } else {
+                        error!("action not found");
                     }
                 }
             }
@@ -164,75 +173,10 @@ impl QueryEditor {
             .orientation(gtk::Orientation::Horizontal)
             .build();
 
-        // let btn_execute = gtk::Button::builder()
-        //     // .label("Execute")
-        //     .icon_name("system-play-start")
-        //     .tooltip_text("Execute")
-        //     .css_classes(vec!["btn", "flat"])
-        //     // .shortcut("Ctrl+Return")
-        //     .build();
         self.btn_execute.set_action_name(Some("win.query-execute"));
         self.btn_execute.set_icon_name("system-play-start");
         self.btn_execute.set_tooltip_text(Some("Execute"));
         self.btn_execute.set_css_classes(&vec!["btn", "flat"]);
-
-        // self.btn_execute.connect_clicked(glib::clone!(
-        //     #[weak(rename_to = this)]
-        //     self,
-        //     move |_button| {
-        //         debug!("button execute clicked");
-
-        //         if let Some(item) = this.cbo_sources.selected_item() {
-        //             let sql = this.get_current_statement();
-        //             debug!("sql: {:?}", sql);
-
-        //             if let Some(boxed) = item.downcast_ref::<glib::BoxedAnyObject>() {
-        //                 let node_ref: Ref<Arc<dyn Node>> = boxed.borrow();
-        //                 let node: &dyn Node = node_ref.as_ref();
-        //                 let dsn_opt = node.into_DataSourceNode();
-
-        //                 if let Some(dsn) = dsn_opt {
-        //                     let arc_dsn = Arc::clone(&dsn);
-
-        //                     let handle = get_runtime().spawn(async move {
-        //                         let value = sql.unwrap_or_default();
-
-        //                         let future = { arc_dsn.query(value.as_str()) };
-
-        //                         match future.await {
-        //                             Err(e) => {
-        //                                 error!("unable to fetch children of node :{}", e);
-        //                                 None
-        //                             }
-        //                             Ok(_) => {
-        //                                 debug!("succeeded");
-        //                                 Some("test")
-        //                             }
-        //                         }
-        //                     });
-
-        //                     this.btn_execute.set_sensitive(false);
-
-        //                     glib::MainContext::default().spawn_local(async move {
-        //                         match handle.await {
-        //                             Err(e) => {
-        //                                 error!("unable to fetch children of node :{}", e);
-
-        //                                 this.btn_execute.set_sensitive(true);
-        //                             }
-        //                             Ok(results) => {
-        //                                 debug!("succeeded");
-        //                                 this.add_result();
-
-        //                                 this.btn_execute.set_sensitive(true);
-        //                             }
-        //                         }
-        //                     });
-        //                 }
-        //             }
-        //         }
-        //     }
-        // ));
 
         self.build_sources_drop_down();
 
@@ -292,7 +236,84 @@ impl QueryEditor {
         }
     }
 
-    fn add_result(&self) {
+    fn build_result_sources_dropdown(&self) -> gtk::DropDown {
+        let factory = gtk::SignalListItemFactory::new();
+        factory.connect_setup(|_, item| {
+            let label = gtk::Label::builder().build();
+
+            let litem = item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("//todo gtk::ListItem");
+            litem.set_child(Some(&label));
+        });
+
+        factory.connect_bind(|_, item| {
+            let litem = item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("//todo gtk::ListItem");
+
+            let label = litem
+                .child()
+                .and_downcast::<gtk::Label>()
+                .expect("//todo gtk::Label");
+
+            let boxed = litem
+                .item()
+                .and_downcast::<glib::BoxedAnyObject>()
+                .expect("//todo glib::BoxedAnyObject");
+
+            let node_ref: Ref<Arc<dyn Node>> = boxed.borrow::<Arc<dyn Node>>();
+            let node: &dyn Node = node_ref.as_ref();
+
+            label.set_label(node.name());
+        });
+
+        let sources = {
+            let ref_sources = self.data_sources.borrow();
+            ref_sources.as_ref().expect("gio::ListStore").clone()
+        };
+
+        let cbo = gtk::DropDown::builder()
+            .enable_search(false)
+            .show_arrow(true)
+            .factory(&factory)
+            .model(&sources)
+            .build();
+
+        return cbo;
+    }
+
+    fn build_column_view(&self, result: &Option<QueryResult>) -> gtk::ColumnView {
+        let store = gio::ListStore::new::<glib::BoxedAnyObject>();
+        if let Some(result) = result {
+            let rows = result.rows.clone();
+            for row in rows {
+                store.append(&glib::BoxedAnyObject::new(row));
+            }
+        }
+
+        let selection_model = gtk::SingleSelection::new(Some(store));
+
+        let lv = gtk::ColumnView::builder()
+            .model(&selection_model)
+            .show_column_separators(true)
+            .show_row_separators(true)
+            .build();
+
+        if let Some(result) = result {
+            let columns = result.columns.clone();
+            for column in columns {
+                let cvc = gtk::ColumnViewColumn::builder()
+                    .title(column.name.clone())
+                    .build();
+                lv.append_column(&cvc);
+            }
+        }
+
+        return lv;
+    }
+
+    fn add_result(&self, result: &Option<QueryResult>) {
         // tab header
         let icon = gtk::Image::builder()
             .icon_name("folder-visiting-symbolic")
@@ -314,14 +335,11 @@ impl QueryEditor {
         th.append(&label);
         th.append(&btn_close);
 
-        let cbo_sources = gtk::DropDown::builder()
-            .enable_search(false)
-            .show_arrow(true)
-            .build();
+        let cbo_sources = self.build_result_sources_dropdown();
 
         let btn_export = gtk::Button::builder()
             .tooltip_text("Export")
-            .icon_name("export-symbolic")
+            .icon_name("export")
             .css_classes(vec!["btn", "flat"])
             .build();
 
@@ -329,7 +347,7 @@ impl QueryEditor {
         bar.pack_end(&cbo_sources);
         bar.pack_end(&btn_export);
 
-        let lv = gtk::ColumnView::builder().build();
+        let lv = self.build_column_view(result);
 
         let sw = gtk::ScrolledWindow::builder()
             .hexpand(true)
@@ -355,7 +373,7 @@ impl QueryEditor {
         let tm = buffer.get_insert();
 
         let cursor_iter = buffer.iter_at_mark(&tm);
-        debug!("cursor_iter: {:?}", cursor_iter);
+        // debug!("cursor_iter: {:?}", cursor_iter);
 
         let mut start_iter = cursor_iter;
         let mut end_iter = cursor_iter;
@@ -394,7 +412,7 @@ impl QueryEditor {
         let text = buffer.text(&start_iter, &end_iter, false);
         let trimmed = text.trim();
 
-        debug!("text: {} {}", text, trimmed);
+        // debug!("text: {} {}", text, trimmed);
 
         if trimmed.is_empty() {
             None

@@ -7,19 +7,23 @@ use gtk::{
     subclass::prelude::*,
 };
 
-// use std::{cell::RefCell, sync::Once};
+use std::iter::Iterator;
 
 use anyhow::anyhow;
 use async_trait::async_trait;
 use std::sync::Arc;
 
-use sqlx::postgres::{PgPoolOptions, PgRow};
+use sqlx::{
+    Column, TypeInfo,
+    postgres::{PgColumn, PgPoolOptions, PgRow},
+    query::Query,
+};
 use sqlx::{PgPool, Pool, Postgres, Row};
 use tokio::sync::OnceCell;
 
 use crate::nodes::schema_node::SchemaNode;
 use crate::{PostgresError, nodes::ConnectionSettings};
-use silo_plugin::node::{DataSourceNode, Node};
+use silo_plugin::node::{DataSourceNode, Node, QueryColumn, QueryResult};
 
 #[derive(Debug, Clone)]
 pub struct PostgresDataSourceNode {
@@ -137,7 +141,7 @@ impl Node for PostgresDataSourceNode {
 
 #[async_trait]
 impl DataSourceNode for PostgresDataSourceNode {
-    async fn query(&self, sql: &str) -> anyhow::Result<()> {
+    async fn query(&self, sql: &str) -> anyhow::Result<QueryResult> {
         debug!("PostgresDataSourceNode::query {}", sql);
 
         let mut builder: sqlx::QueryBuilder<Postgres> = sqlx::QueryBuilder::new(sql);
@@ -146,9 +150,32 @@ impl DataSourceNode for PostgresDataSourceNode {
         let pool = self.get_pool().await?;
         match query.fetch_all(pool).await {
             Err(e) => return Err(anyhow!(PostgresError::QueryError(e))),
-            Ok(results) => {
-                debug!("results: {:?}", results);
-                return Ok(());
+            Ok(rows) => {
+                debug!("results: {:?}", rows);
+
+                if rows.is_empty() {
+                    return Ok(QueryResult {
+                        columns: vec![],
+                        rows: vec![],
+                    });
+                }
+
+                let mut columns: Vec<QueryColumn> = vec![];
+                if let Some(first_row) = rows.get(0) {
+                    columns = first_row
+                        .columns()
+                        .iter()
+                        .map(|c| QueryColumn {
+                            name: c.name().to_string(),
+                            data_type: c.type_info().name().to_string(),
+                        })
+                        .collect();
+                }
+
+                return Ok(QueryResult {
+                    columns: columns,
+                    rows: vec![],
+                });
             }
         }
     }

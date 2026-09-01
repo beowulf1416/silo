@@ -12,7 +12,7 @@ pub fn query_execute_action(mw: &MainWindow) -> gio::SimpleAction {
         #[weak]
         mw,
         move |_action, _target| {
-            // debug!("query_execute_action activated {:?} {:?}", a, b);
+            debug!("query_execute_action activated");
 
             let ev = mw.editor_view();
             if let Some(query_editor) = ev.get_current_query_editor() {
@@ -21,6 +21,8 @@ pub fn query_execute_action(mw: &MainWindow) -> gio::SimpleAction {
                 // action.set_enabled(false);
                 query_editor.execute();
                 // action.set_enabled(true);
+            } else {
+                error!("no query editor found");
             }
         }
     ));

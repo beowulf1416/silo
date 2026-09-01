@@ -141,15 +141,18 @@ impl PostgresConnectionEditor {
                         Err(e) => {
                             error!("error when connecting to db: {}", e);
                             this.label_test.set_text(format!("{}", e).as_str());
+                            this.label_test.set_css_classes(&["error"]);
                         }
                         Ok(join_result) => match join_result {
                             Err(e) => {
                                 error!("error when connecting to db: {}", e);
                                 this.label_test.set_text(format!("{}", e).as_str());
+                                this.label_test.set_css_classes(&["error"]);
                             }
                             Ok(_) => {
                                 this.label_test
                                     .set_text("Successfully connected to database");
+                                this.label_test.set_css_classes(&["success"]);
                             }
                         },
                     }
@@ -255,11 +258,17 @@ impl PostgresConnectionEditor {
             let text = entry.text();
             if text.is_empty() {
                 entry_name_valid_cloned.set(false);
-                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("error"));
+                entry.set_icon_from_icon_name(
+                    gtk::EntryIconPosition::Secondary,
+                    Some("x-round-red"),
+                );
                 entry.add_css_class("error");
             } else {
                 entry_name_valid_cloned.set(true);
-                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("check"));
+                entry.set_icon_from_icon_name(
+                    gtk::EntryIconPosition::Secondary,
+                    Some("check-round-green"),
+                );
                 entry.remove_css_class("error");
             }
 
@@ -272,11 +281,17 @@ impl PostgresConnectionEditor {
             let text = entry.text();
             if text.is_empty() {
                 entry_db_valid_cloned.set(false);
-                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("error"));
+                entry.set_icon_from_icon_name(
+                    gtk::EntryIconPosition::Secondary,
+                    Some("x-round-red"),
+                );
                 entry.add_css_class("error");
             } else {
                 entry_db_valid_cloned.set(true);
-                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("check"));
+                entry.set_icon_from_icon_name(
+                    gtk::EntryIconPosition::Secondary,
+                    Some("check-round-green"),
+                );
                 entry.remove_css_class("error");
             }
 
@@ -289,11 +304,17 @@ impl PostgresConnectionEditor {
             let text = entry.text();
             if text.is_empty() {
                 entry_host_valid_cloned.set(false);
-                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("error"));
+                entry.set_icon_from_icon_name(
+                    gtk::EntryIconPosition::Secondary,
+                    Some("x-round-red"),
+                );
                 entry.add_css_class("error");
             } else {
                 entry_host_valid_cloned.set(true);
-                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("check"));
+                entry.set_icon_from_icon_name(
+                    gtk::EntryIconPosition::Secondary,
+                    Some("check-round-green"),
+                );
                 entry.remove_css_class("error");
             }
 
@@ -321,11 +342,17 @@ impl PostgresConnectionEditor {
             let text = entry.text();
             if text.is_empty() {
                 entry_user_valid_cloned.set(false);
-                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("error"));
+                entry.set_icon_from_icon_name(
+                    gtk::EntryIconPosition::Secondary,
+                    Some("x-round-red"),
+                );
                 entry.add_css_class("error");
             } else {
                 entry_user_valid_cloned.set(true);
-                entry.set_icon_from_icon_name(gtk::EntryIconPosition::Secondary, Some("check"));
+                entry.set_icon_from_icon_name(
+                    gtk::EntryIconPosition::Secondary,
+                    Some("check-round-green"),
+                );
                 entry.remove_css_class("error");
             }
 

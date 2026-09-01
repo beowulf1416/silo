@@ -13,7 +13,7 @@ use crate::nodes::ConnectionSettings;
 use crate::nodes::schema_functions_node::SchemaFunctionsNode;
 use crate::nodes::schema_procedures_node::SchemaProceduresNode;
 use crate::nodes::schema_tables_node::SchemaTablesNode;
-use silo_plugin::node::{DataSourceNode, Node};
+use silo_plugin::node::{DataSourceNode, Node, QueryResult};
 
 #[derive(Debug, Clone)]
 pub struct MySQLDataSourceNode {
@@ -66,7 +66,7 @@ impl Node for MySQLDataSourceNode {
 
 #[async_trait]
 impl DataSourceNode for MySQLDataSourceNode {
-    async fn query(&self, sql: &str) -> anyhow::Result<()> {
+    async fn query(&self, sql: &str) -> anyhow::Result<QueryResult> {
         return Err(anyhow::anyhow!("//todo not implemented"));
     }
 

@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use gtk::{gdk, glib, prelude::*, subclass::prelude::*};
+use gtk::{CssProvider, gdk, glib, prelude::*, subclass::prelude::*};
 
 use crate::components::main_window::MainWindow;
 use silo_base::Silo;
@@ -77,6 +77,14 @@ impl ApplicationImpl for App {
         let display = gdk::Display::default().unwrap();
         let theme = gtk::IconTheme::for_display(&display);
         theme.add_resource_path("/org/devphilplus/silo/images");
+
+        let provider = CssProvider::new();
+        provider.load_from_resource("/org/devphilplus/silo/styles.css");
+        gtk::StyleContext::add_provider_for_display(
+            &display,
+            &provider,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
     }
 }
 

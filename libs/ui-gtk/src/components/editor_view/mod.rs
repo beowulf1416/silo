@@ -20,6 +20,18 @@ impl EditorView {
         glib::Object::builder().build()
     }
 
+    fn get_child_by_name(&self, widget: gtk::Widget, name: &str) -> Option<gtk::Widget> {
+        let mut current = widget.first_child();
+        while let Some(child) = current {
+            if child.widget_name() == name {
+                return Some(child);
+            }
+            current = child.first_child();
+        }
+
+        None
+    }
+
     pub fn get_current_query_editor(&self) -> Option<QueryEditor> {
         let imp = self.imp();
         debug!(
@@ -28,11 +40,31 @@ impl EditorView {
         );
 
         if let Some(widget) = imp.nb.nth_page(imp.nb.current_page()) {
-            if let Ok(query_editor) = widget.downcast::<QueryEditor>() {
+            let target = self.get_child_by_name(widget, "query_editor");
+            debug!("target: {:?}", target);
+
+            if let Some(query_editor) = target.and_then(|t| t.downcast::<QueryEditor>().ok()) {
                 return Some(query_editor);
             }
         }
 
+        // if let Some(widget) = imp
+        //     .nb
+        //     .nth_page(imp.nb.current_page())
+        //     .and_then(|a| a.downcast::<gtk::Box>().ok())
+        // {
+        //     if let Some(child) = widget.first_child() {
+        //         debug!("child: {:?}", child);
+        //     }
+
+        //     debug!("widget: {:?}", widget);
+        //     if let Ok(query_editor) = widget.downcast::<QueryEditor>() {
+        //         debug!("query_editor: {:?}", query_editor);
+        //         return Some(query_editor);
+        //     }
+        // }
+
+        debug!("no query editor found");
         return None;
     }
 
