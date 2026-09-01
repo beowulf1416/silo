@@ -40,6 +40,7 @@ impl MainWindow {
             .build();
 
         window.set_app(&application);
+        window.restore_state();
 
         return window;
     }
@@ -272,5 +273,18 @@ impl MainWindow {
         }
 
         return Ok(());
+    }
+
+    fn restore_state(&self) {
+        debug!("restoring state...");
+
+        let settings = gio::Settings::new(crate::APP_ID);
+
+        let width = settings.int("window-width");
+        let height = settings.int("window-height");
+        let is_maximized = settings.boolean("is-maximized");
+
+        let _ = self.set_default_size(width, height);
+        let _ = self.set_maximized(is_maximized);
     }
 }
