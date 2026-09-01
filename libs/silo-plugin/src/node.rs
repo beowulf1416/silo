@@ -36,10 +36,23 @@ pub trait Node: std::fmt::Debug + Send + Sync {
 //         self.clone_box()
 //     }
 // }
+//
+
+#[derive(Debug, Clone)]
+pub struct QueryColumn {
+    pub name: String,
+    pub data_type: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct QueryResult {
+    pub columns: Vec<QueryColumn>,
+    pub rows: Vec<Vec<String>>,
+}
 
 #[async_trait]
 pub trait DataSourceNode: std::fmt::Debug + Send + Sync {
-    async fn query(&self, sql: &str) -> anyhow::Result<()>;
+    async fn query(&self, sql: &str) -> anyhow::Result<QueryResult>;
 
     fn get_configuration(&self) -> serde_json::Value;
 }
