@@ -79,7 +79,7 @@ impl ApplicationImpl for App {
         theme.add_resource_path("/org/devphilplus/silo/images");
 
         let provider = CssProvider::new();
-        provider.load_from_resource("/org/devphilplus/silo/styles.css");
+        provider.load_from_resource("/org/devphilplus/silo/css/styles.css");
         gtk::StyleContext::add_provider_for_display(
             &display,
             &provider,

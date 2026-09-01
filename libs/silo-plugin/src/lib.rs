@@ -12,6 +12,7 @@ pub type DataSourceName = String;
 pub type WorkspacePath = String;
 
 pub enum ApplicationMessage {
+    Close,
     CloseRequested,
     WorkspaceChanged(WorkspacePath),
     WorkspaceSaveRequested,

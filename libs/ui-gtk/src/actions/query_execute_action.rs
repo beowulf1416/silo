@@ -5,7 +5,7 @@ use gtk::{gio, glib, prelude::*};
 use crate::components::main_window::MainWindow;
 
 pub fn query_execute_action(mw: &MainWindow) -> gio::SimpleAction {
-    debug!("query_execute_action");
+    // debug!("query_execute_action");
 
     let action = gio::SimpleAction::new("query-execute", None);
     action.connect_activate(glib::clone!(

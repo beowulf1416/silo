@@ -24,7 +24,7 @@ type WorkspacePath = String;
 
 glib::wrapper! {
     pub struct MainWindow(ObjectSubclass<imp::MainWindow>)
-        @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow,
+    @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, adw::ApplicationWindow,
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget,
         gtk::Native, gtk::Root, gtk::ShortcutManager, gio::ActionMap, gio::ActionGroup
     ;
@@ -118,11 +118,18 @@ impl MainWindow {
 
     fn process_message(&self, msg: ApplicationMessage) {
         match msg {
-            ApplicationMessage::CloseRequested => {
-                debug!("process_message: close requested");
+            ApplicationMessage::Close => {
+                debug!("process_message: close");
                 if let Some(app) = self.application() {
                     app.quit();
                 }
+            }
+            ApplicationMessage::CloseRequested => {
+                debug!("process_message: close requested");
+                // if let Some(app) = self.application() {
+                //     app.quit();
+                // }
+                self.imp().close_requested();
             }
             ApplicationMessage::CloseEditorRequested(page) => {
                 debug!("close editor requested: {:?}", page);

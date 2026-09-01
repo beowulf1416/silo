@@ -11,6 +11,7 @@ serde_json = "*"
 
 tokio = { version = "*", features = ["full"] }
 gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
+adw = { version = "*", package = "libadwaita", features = ["v1_7"] }
 async-channel = "*"
 async-trait = "*"
 

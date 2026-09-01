@@ -5,6 +5,7 @@ use tracing::debug;
 
 use std::rc::Rc;
 
+use adw::prelude::*;
 use gtk::{gdk, gio, glib, prelude::*, subclass::prelude::*};
 
 use crate::APP_ID;
@@ -14,7 +15,7 @@ use silo_plugin::plugin::{Plugin, PluginRegistry};
 
 glib::wrapper! {
     pub struct App(ObjectSubclass<imp::App>)
-        @extends gio::Application, gtk::Application,
+    @extends gio::Application, gtk::Application, adw::Application,
         @implements gio::ActionGroup, gio::ActionMap;
 }
 

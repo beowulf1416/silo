@@ -356,7 +356,7 @@ impl ObjectSubclass for DataSourcesView {
 
 impl ObjectImpl for DataSourcesView {
     fn constructed(&self) {
-        debug!("DataSourceView::constructed");
+        // debug!("DataSourceView::constructed");
 
         self.parent_constructed();
         let obj = self.obj();

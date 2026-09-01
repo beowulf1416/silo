@@ -4,8 +4,10 @@ use tracing::{debug, error};
 use std::cell::{OnceCell, RefCell};
 // use std::collections::HashMap;
 // use std::rc::Rc;
+use std::borrow::Borrow;
 use std::sync::Arc;
 
+use adw::{prelude::*, subclass::prelude::*};
 use gtk::{
     gio,
     gio::prelude::*,
@@ -45,21 +47,12 @@ pub struct MainWindow {
     pub(super) dsv: RefCell<Option<DataSourcesView>>,
     pub(super) ev: EditorView,
 
-    // pub plugins: HashMap<String, Box<dyn Plugin>>,
-    // pub registry: Rc<PluginRegistry>,
     pub(super) app: RefCell<Option<App>>,
 
     pub(super) data_sources: RefCell<Option<gio::ListStore>>,
 }
 
 impl MainWindow {
-    // pub fn set_workspace_path(&self, new_path: String) {
-    //     self.app
-    //         .borrow()
-    //         .expect("App struct expected")
-    //         .set_workspace_path(new_path);
-    // }
-
     pub fn sender(&self) -> async_channel::Sender<ApplicationMessage> {
         return self
             .sender
@@ -81,19 +74,6 @@ impl MainWindow {
             let _ = sender.send(message).await;
         });
     }
-
-    // pub fn send(&self, message: ApplicationMessage) {
-    //     let sender = self
-    //         .sender
-    //         .borrow()
-    //         .as_ref()
-    //         .expect("sender is not set")
-    //         .clone();
-
-    //     glib::MainContext::default().spawn(async move {
-    //         let _ = sender.send(message).await;
-    //     });
-    // }
 
     fn add_actions(&self) {
         let obj = self.obj().clone();
@@ -135,13 +115,78 @@ impl MainWindow {
 
         return container;
     }
+
+    fn check_unsaved(&self) -> bool {
+        debug!("check_unsaved");
+        return true;
+    }
+
+    pub fn close_requested(&self) {
+        let obj = self.obj();
+
+        // check if there are unsaved changes
+        // if so, show a confirmation dialog
+        if self.check_unsaved() {
+            debug!("alert dialog");
+
+            let dialog = adw::AlertDialog::builder()
+                .heading("Unsaved changes")
+                .body("You have unsaved changes. Do you want to save them before closing?")
+                .build();
+
+            dialog.add_response("yes", "Yes");
+            dialog.add_response("no", "No");
+            dialog.set_default_response(Some("yes"));
+            dialog.set_close_response("no");
+
+            glib::MainContext::default().spawn_local(glib::clone!(
+                #[weak(rename_to = this)]
+                self,
+                async move {
+                    debug!("showing alert dialog");
+
+                    let obj = this.obj();
+                    let window = obj.clone().upcast::<gtk::Window>();
+
+                    match dialog.choose_future(Some(&window)).await.as_str() {
+                        "no" => {
+                            debug!("chose no");
+                            // return;
+                        }
+                        "yes" => {
+                            debug!("chose yes");
+                            this.save_settings();
+                        }
+                        _ => {
+                            debug!("unknown response");
+                        }
+                    }
+
+                    let _ = obj.send(ApplicationMessage::Close);
+                }
+            ));
+        }
+    }
+
+    fn save_settings(&self) {
+        debug!("save_settings");
+        let window = self.obj();
+        let settings = gio::Settings::new(crate::APP_ID);
+
+        let (width, height) = window.default_size();
+        let _ = settings.set_int("window-width", width);
+        let _ = settings.set_int("window-height", height);
+
+        let _ = settings.set_boolean("is-maximized", window.is_maximized());
+    }
 }
 
 #[glib::object_subclass]
 impl ObjectSubclass for MainWindow {
     const NAME: &'static str = "MainWindow";
     type Type = super::MainWindow;
-    type ParentType = gtk::ApplicationWindow;
+    // type ParentType = gtk::ApplicationWindow;
+    type ParentType = adw::ApplicationWindow;
 
     fn class_init(klass: &mut Self::Class) {
         // klass.bind_template();
@@ -168,15 +213,29 @@ impl ObjectImpl for MainWindow {
         let (sender, receiver_status) = async_channel::unbounded::<StatusMessage>();
         self.sender_status.replace(Some(sender));
 
-        obj.set_default_size(800, 600);
-        obj.set_titlebar(Some(&self.header_bar));
+        // obj.set_default_size(800, 600);
+        // obj.set_titlebar(Some(&self.header_bar));
+
+        let header_bar = adw::HeaderBar::builder()
+            .title_widget(&self.header_bar)
+            .build();
+
+        let btn_menu = gtk::Button::builder()
+            .icon_name("open-menu-symbolic")
+            .tooltip_text("Main Menu")
+            .build();
+        header_bar.pack_start(&btn_menu);
+
+        let toolbar = adw::ToolbarView::builder().content(&header_bar).build();
 
         let content_box = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
             .hexpand(true)
             .vexpand(true)
             .build();
-        obj.set_child(Some(&content_box));
+        content_box.append(&toolbar);
+        // obj.set_child(Some(&content_box));
+        obj.set_content(Some(&content_box));
 
         let paned = gtk::Paned::builder()
             .orientation(gtk::Orientation::Horizontal)
@@ -213,8 +272,10 @@ impl WindowImpl for MainWindow {
         let obj = self.obj();
         obj.send(ApplicationMessage::CloseRequested);
 
-        return glib::Propagation::Proceed;
+        return glib::Propagation::Stop;
     }
 }
 
 impl ApplicationWindowImpl for MainWindow {}
+
+impl AdwApplicationWindowImpl for MainWindow {}

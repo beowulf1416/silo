@@ -15,7 +15,7 @@ pub enum HeaderInputMessage {
 
 #[derive(Debug, Default)]
 pub struct Header {
-    pub header_bar: gtk::HeaderBar,
+    // pub header_bar: gtk::HeaderBar,
     // pub title_label: gtk::Label,
     pub btn_menu: gtk::MenuButton,
     pub btn_settings: gtk::Button,
@@ -77,7 +77,7 @@ impl ObjectImpl for Header {
         title_box.append(&icon);
         title_box.append(&label);
 
-        self.header_bar.set_title_widget(Some(&title_box));
+        // self.header_bar.set_title_widget(Some(&title_box));
 
         // let menu_main = gio::Menu::new();
         // menu_main.append(Some("_File"), None);
@@ -106,20 +106,21 @@ impl ObjectImpl for Header {
         self.btn_menu.set_tooltip_text(Some("Main Menu"));
         self.btn_menu.set_popover(Some(&pop_menu));
         // self.btn_menu.set_action_name(Some("win.quit"));
-        self.header_bar.pack_start(&self.btn_menu);
+        // self.header_bar.pack_start(&self.btn_menu);
 
         // settings button
         self.btn_settings
             .set_icon_name("preferences-system-symbolic");
         self.btn_settings.set_tooltip_text(Some("Settings"));
-        self.header_bar.pack_end(&self.btn_settings);
+        // self.header_bar.pack_end(&self.btn_settings);
 
-        self.header_bar.set_hexpand(true);
+        // self.header_bar.set_hexpand(true);
 
         // self.add_actions();
         // self.setup_action_handlers();
 
-        obj.append(&self.header_bar);
+        // obj.append(&self.header_bar);
+        obj.append(&title_box);
     }
 }
 
