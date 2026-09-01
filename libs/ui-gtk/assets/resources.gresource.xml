@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-    <gresource prefix="/org/devphilplus/silo/images">
-        <file compressed="true" preprocess="xml-stripblanks">silo.svg</file>
-        <file compressed="true" preprocess="xml-stripblanks">save.svg</file>
-        <file compressed="true" preprocess="xml-stripblanks">connect.svg</file>
-        <file compressed="true" preprocess="xml-stripblanks">ellipsis_vertical.svg</file>
-        <file compressed="true" preprocess="xml-stripblanks">data_source.svg</file>
-        <file compressed="true" preprocess="xml-stripblanks">system-play-start.svg</file>
+    <gresource prefix="/org/devphilplus/silo/">
+        <file compressed="true">css/styles.css</file>
+
+        <file compressed="true" preprocess="xml-stripblanks">images/silo.svg</file>
+        <file compressed="true" preprocess="xml-stripblanks">images/save.svg</file>
+        <file compressed="true" preprocess="xml-stripblanks">images/connect.svg</file>
+        <file compressed="true" preprocess="xml-stripblanks">images/ellipsis_vertical.svg</file>
+        <file compressed="true" preprocess="xml-stripblanks">images/data_source.svg</file>
+        <file compressed="true" preprocess="xml-stripblanks">images/system-play-start.svg</file>
+        <file compressed="true" preprocess="xml-stripblanks">images/check-round-green.svg</file>
+        <file compressed="true" preprocess="xml-stripblanks">images/x-round-red.svg</file>
+        <file compressed="true" preprocess="xml-stripblanks">images/export.svg</file>
     </gresource>
 </gresources>
