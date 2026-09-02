@@ -10,7 +10,7 @@ use gtk::{
 };
 
 // use crate::components::main_window::MainWindow;
-use silo_plugin::ApplicationMessage;
+use silo_plugin::{ApplicationMessage, StatusMessage};
 
 glib::wrapper! {
     pub struct QueryEditor(ObjectSubclass<imp::QueryEditor>)
@@ -32,9 +32,15 @@ impl QueryEditor {
         return obj;
     }
 
-    pub fn set_sender(&self, sender: async_channel::Sender<ApplicationMessage>) {
+    pub fn set_sender(
+        &self,
+        sender: async_channel::Sender<ApplicationMessage>,
+        sender_status: async_channel::Sender<StatusMessage>,
+    ) {
         let imp = self.imp();
         imp.sender.replace(Some(sender));
+
+        imp.sender_status.replace(Some(sender_status));
     }
 
     pub fn set_data_sources(&self, sources: gio::ListStore) {

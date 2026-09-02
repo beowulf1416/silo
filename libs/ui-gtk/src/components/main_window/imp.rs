@@ -1,3 +1,4 @@
+use gtk::gio::SettingsBackend;
 use tracing::{debug, error};
 
 // use async_channel::Sender;
@@ -50,6 +51,9 @@ pub struct MainWindow {
     pub(super) app: RefCell<Option<App>>,
 
     pub(super) data_sources: RefCell<Option<gio::ListStore>>,
+
+    pub(super) workspace_path: RefCell<Option<String>>,
+    pub(super) workspace_path_is_dirty: RefCell<bool>,
 }
 
 impl MainWindow {
@@ -59,6 +63,15 @@ impl MainWindow {
             .borrow()
             .as_ref()
             .expect("sender is not set")
+            .clone();
+    }
+
+    pub fn sender_status(&self) -> async_channel::Sender<StatusMessage> {
+        return self
+            .sender_status
+            .borrow()
+            .as_ref()
+            .expect("sender_status is not set")
             .clone();
     }
 
@@ -73,6 +86,33 @@ impl MainWindow {
         glib::MainContext::default().spawn_local(async move {
             let _ = sender.send(message).await;
         });
+    }
+
+    pub fn set_workspace_path(&self, path: &String) -> anyhow::Result<()> {
+        self.workspace_path.replace(Some(path.clone()));
+        self.workspace_path_is_dirty.replace(true);
+
+        // load data_sources.json in workspace_path
+        match std::fs::File::open(format!("{}/data_sources.json", path.clone())) {
+            Err(e) => {
+                error!("Failed to open data_sources.json: {}", e);
+                return Err(anyhow::anyhow!("Failed to open data_sources.json: {}", e));
+            }
+            Ok(mut file) => {
+                let reader = std::io::BufReader::new(file);
+                let config: serde_json::Value = serde_json::from_reader(reader)?;
+
+                return Ok(());
+            }
+        }
+    }
+
+    pub fn workspace_path(&self) -> Option<String> {
+        return self.workspace_path.borrow().clone();
+    }
+
+    pub fn is_workspace_path_dirty(&self) -> bool {
+        return self.workspace_path_is_dirty.borrow().clone();
     }
 
     fn add_actions(&self) {
@@ -171,13 +211,48 @@ impl MainWindow {
     fn save_settings(&self) {
         debug!("save_settings");
         let window = self.obj();
-        let settings = gio::Settings::new(crate::APP_ID);
+        // let settings = gio::Settings::new(crate::APP_ID);
 
-        let (width, height) = window.default_size();
-        let _ = settings.set_int("window-width", width);
-        let _ = settings.set_int("window-height", height);
+        let schema_dir = std::path::Path::new("libs/ui-gtk");
+        if let Ok(source) = gio::SettingsSchemaSource::from_directory(schema_dir, None, false) {
+            if let Some(schema) = source.lookup(crate::APP_ID, false) {
+                let settings =
+                    gio::Settings::new_full(&schema, Option::<&SettingsBackend>::None, None);
 
-        let _ = settings.set_boolean("is-maximized", window.is_maximized());
+                let (width, height) = window.default_size();
+                let _ = settings.set_int("window-width", width);
+                let _ = settings.set_int("window-height", height);
+
+                let _ = settings.set_boolean("is-maximized", window.is_maximized());
+
+                let workspace_path = self.workspace_path().unwrap_or(String::from(""));
+                let _ = settings.set_string("workspace-path", workspace_path.as_str());
+            }
+        } else {
+            error!("Failed to load settings schema");
+        }
+    }
+
+    fn build_main_menu(&self) -> gio::Menu {
+        let menu = gio::Menu::new();
+        menu.append(Some("_File"), None);
+
+        let section = gio::Menu::new();
+
+        let item = gio::MenuItem::new(Some("Open ..."), Some("win.workspace-open"));
+        section.append_item(&item);
+
+        let item = gio::MenuItem::new(Some("Save"), Some("win.workspace-save"));
+        section.append_item(&item);
+
+        menu.append_section(Some("Workspace"), &section);
+
+        let section = gio::Menu::new();
+        let item = gio::MenuItem::new(Some("_Quit"), Some("win.quit"));
+        section.append_item(&item);
+        menu.append_section(None, &section);
+
+        return menu;
     }
 }
 
@@ -188,14 +263,14 @@ impl ObjectSubclass for MainWindow {
     // type ParentType = gtk::ApplicationWindow;
     type ParentType = adw::ApplicationWindow;
 
-    fn class_init(klass: &mut Self::Class) {
-        // klass.bind_template();
-        // klass.bind_template_instance_callbacks();
-    }
+    // fn class_init(klass: &mut Self::Class) {
+    //     // klass.bind_template();
+    //     // klass.bind_template_instance_callbacks();
+    // }
 
-    fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
-        // obj.init_template();
-    }
+    // fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
+    //     // obj.init_template();
+    // }
 }
 
 impl ObjectImpl for MainWindow {
@@ -220,9 +295,13 @@ impl ObjectImpl for MainWindow {
             .title_widget(&self.header_bar)
             .build();
 
-        let btn_menu = gtk::Button::builder()
+        let menu = self.build_main_menu();
+        let pop_menu = gtk::PopoverMenu::from_model(Some(&menu));
+
+        let btn_menu = gtk::MenuButton::builder()
             .icon_name("open-menu-symbolic")
             .tooltip_text("Main Menu")
+            .popover(&pop_menu)
             .build();
         header_bar.pack_start(&btn_menu);
 

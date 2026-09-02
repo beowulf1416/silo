@@ -15,8 +15,8 @@ use std::{
 
 use sourceview5::prelude::*;
 
-use silo_plugin::ApplicationMessage;
-use silo_plugin::node::{DataSourceNode, Node, QueryResult};
+use silo_plugin::node::{DataSourceNode, Node, QueryColumn, QueryResult};
+use silo_plugin::{ApplicationMessage, StatusMessage};
 
 use crate::get_runtime;
 
@@ -28,6 +28,7 @@ const CURRENT_STATEMENT_COLOR: &str = "#30C5FF";
 pub struct QueryEditor {
     // pub window: RefCell<Option<MainWindow>>,
     pub(super) sender: RefCell<Option<async_channel::Sender<ApplicationMessage>>>,
+    pub(super) sender_status: RefCell<Option<async_channel::Sender<StatusMessage>>>,
 
     // pub(super) sources: RefCell<Option<gio::ListStore>>,
     pub(super) btn_execute: gtk::Button,
@@ -46,6 +47,15 @@ impl QueryEditor {
         self.data_sources.replace(Some(sources.clone()));
 
         self.cbo_sources.set_model(Some(&sources.clone()))
+    }
+
+    fn notify(&self, msg: StatusMessage) {
+        self.sender_status
+            .borrow()
+            .as_ref()
+            .expect("Sender")
+            .send_blocking(msg)
+            .ok();
     }
 
     pub fn execute(&self) {
@@ -69,11 +79,11 @@ impl QueryEditor {
                         match future.await {
                             Err(e) => {
                                 error!("an error occured while executing query: {}", e);
-                                None
+                                Err(e)
                             }
                             Ok(result) => {
                                 debug!("succeeded 1");
-                                Some(result)
+                                Ok(result)
                             }
                         }
                     });
@@ -96,12 +106,21 @@ impl QueryEditor {
                                 match handle.await {
                                     Err(e) => {
                                         error!("unable to execute query :{}", e);
+                                        this.notify(StatusMessage::Error(e.to_string()));
 
                                         action.set_enabled(true);
                                     }
                                     Ok(result) => {
                                         debug!("succeeded 2");
-                                        this.add_result(&result);
+                                        match result {
+                                            Err(e) => {
+                                                error!("query error: {}", e);
+                                                this.notify(StatusMessage::Error(e.to_string()));
+                                            }
+                                            Ok(query_result) => {
+                                                this.add_result(&query_result);
+                                            }
+                                        }
 
                                         action.set_enabled(true);
                                     }
@@ -283,14 +302,14 @@ impl QueryEditor {
         return cbo;
     }
 
-    fn build_column_view(&self, result: &Option<QueryResult>) -> gtk::ColumnView {
+    fn build_column_view(&self, result: &QueryResult) -> gtk::ColumnView {
         let store = gio::ListStore::new::<glib::BoxedAnyObject>();
-        if let Some(result) = result {
-            let rows = result.rows.clone();
-            for row in rows {
-                store.append(&glib::BoxedAnyObject::new(row));
-            }
+        // if let Some(result) = result {
+        let rows = result.rows.clone();
+        for row in rows {
+            store.append(&glib::BoxedAnyObject::new(row));
         }
+        // }
 
         let selection_model = gtk::SingleSelection::new(Some(store));
 
@@ -300,26 +319,73 @@ impl QueryEditor {
             .show_row_separators(true)
             .build();
 
-        if let Some(result) = result {
-            let columns = result.columns.clone();
-            for column in columns {
-                let cvc = gtk::ColumnViewColumn::builder()
-                    .title(column.name.clone())
-                    .build();
-                lv.append_column(&cvc);
-            }
+        // if let Some(result) = result {
+        let columns = result.columns.clone();
+        for (i, column) in columns.iter().enumerate() {
+            // let cvc = gtk::ColumnViewColumn::builder()
+            //     .title(column.name.clone())
+            //     .build();
+            let cvc = self.build_column(column, i);
+            lv.append_column(&cvc);
         }
+        // }
 
         return lv;
     }
 
-    fn add_result(&self, result: &Option<QueryResult>) {
+    fn build_column(&self, column: &QueryColumn, index: usize) -> gtk::ColumnViewColumn {
+        let factory = gtk::SignalListItemFactory::new();
+        factory.connect_setup(|_, item| {
+            let litem = item.downcast_ref::<gtk::ListItem>().unwrap();
+
+            let label = gtk::Label::new(None);
+            label.set_xalign(0.0);
+
+            litem.set_child(Some(&label));
+        });
+
+        factory.connect_bind(move |_factory, item| {
+            let litem = item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("expecting gtk::ListItem");
+
+            let label = litem
+                .child()
+                .and_downcast::<gtk::Label>()
+                .expect("expecting gtk::Label");
+
+            let obj = litem
+                .item()
+                .and_downcast::<glib::BoxedAnyObject>()
+                .expect("expecting gtk::ListRow");
+
+            // let obj = row
+            //     .item()
+            //     .and_downcast::<glib::BoxedAnyObject>()
+            //     .expect("expecting BoxedAnyObject");
+
+            let vec_str_ref: Ref<Vec<String>> = obj.borrow::<Vec<String>>();
+            let vec_str = vec_str_ref.clone();
+            label.set_text(vec_str[index].as_str());
+        });
+
+        let cvc = gtk::ColumnViewColumn::builder()
+            .title(column.name.clone())
+            .factory(&factory)
+            .build();
+        return cvc;
+    }
+
+    fn add_result(&self, result: &QueryResult) {
         // tab header
         let icon = gtk::Image::builder()
             .icon_name("folder-visiting-symbolic")
             .build();
 
-        let label = gtk::Label::builder().label("result").build();
+        let suffix = self.nb.n_pages();
+        let label = gtk::Label::builder()
+            .label(format!("result {}", suffix))
+            .build();
 
         let btn_close = gtk::Button::builder()
             .tooltip_text("close")
@@ -365,7 +431,16 @@ impl QueryEditor {
         container.append(&bar);
         container.append(&sw);
 
-        self.nb.append_page(&container, Some(&th));
+        let index = self.nb.append_page(&container, Some(&th));
+        self.nb.set_current_page(Some(index));
+
+        btn_close.connect_clicked(glib::clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |_btn| {
+                this.nb.remove_page(Some(index));
+            }
+        ));
     }
 
     fn get_current_statement(&self) -> Option<String> {

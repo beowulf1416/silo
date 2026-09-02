@@ -28,7 +28,10 @@ impl EditorView {
             .icon_name("folder-visiting-symbolic")
             .build();
 
-        let label = gtk::Label::builder().label(display_name).build();
+        let suffix = self.nb.n_pages();
+        let label = gtk::Label::builder()
+            .label(format!("{} ({})", display_name, suffix))
+            .build();
 
         let btn_close = gtk::Button::builder()
             .tooltip_text("close")
