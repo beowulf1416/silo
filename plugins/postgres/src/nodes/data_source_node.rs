@@ -50,16 +50,25 @@ impl PostgresDataSourceNode {
                 let pw = self.settings.pw.clone();
                 let host = self.settings.host.clone();
                 let port = self.settings.port.clone();
-                let db = self.settings.name.clone();
+                let db = self.settings.db.clone();
 
                 let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
 
-                PgPoolOptions::new().max_connections(5).connect(&uri).await
+                match PgPoolOptions::new().max_connections(5).connect(&uri).await {
+                    Err(e) => {
+                        error!("unable to connect to database: {}", e);
+                        return Err(anyhow::anyhow!(PostgresError::ConnectionError(e)));
+                    }
+                    Ok(pool) => {
+                        return Ok(pool);
+                    }
+                }
             })
             .await
         {
             Err(e) => {
-                return Err(anyhow::anyhow!(PostgresError::ConnectionError(e)));
+                // return Err(anyhow::anyhow!(PostgresError::ConnectionError(e)));
+                return Err(e);
             }
             Ok(pool) => {
                 return Ok(pool);
@@ -68,14 +77,65 @@ impl PostgresDataSourceNode {
     }
 
     async fn fetch_schemas_async(&self) -> anyhow::Result<Vec<String>> {
-        let pool = self.get_pool().await?;
-        let sql = "select schema_name from information_schema.schemata";
-        let results = sqlx::query(sql).fetch_all(pool).await?;
-        let schemas: Vec<String> = results
-            .into_iter()
-            .map(|r| r.get::<String, _>("schema_name"))
-            .collect();
-        return Ok(schemas);
+        debug!("fetch_schemas_async");
+
+        match self.get_pool().await {
+            Err(e) => {
+                error!("unable to get pool: {}", e);
+                return Err(anyhow::anyhow!(e));
+            }
+            Ok(pool) => {
+                let sql = "select schema_name from information_schema.schemata";
+                match sqlx::query(sql).fetch_all(pool).await {
+                    Err(e) => {
+                        error!("unable to fetch schemas: {}", e);
+                        return Err(anyhow::anyhow!(e));
+                    }
+                    Ok(results) => {
+                        let schemas: Vec<String> = results
+                            .into_iter()
+                            .map(|r| r.get::<String, _>("schema_name"))
+                            .collect();
+                        return Ok(schemas);
+                    }
+                }
+            }
+        }
+    }
+
+    fn decode(&self, r: &PgRow, c: &PgColumn, i: usize) -> String {
+        // let value = r
+        //     .try_get::<String, _>(i)
+        //     .or_else(|_| r.try_get::<i32, _>(i).map(|v| v.to_string()))
+        //     .unwrap_or_else(|_| "[NULL]".to_string());
+        // return value;
+
+        let value = match c.type_info().name() {
+            // _ => {
+            //     debug!("unknown type: {}", c.type_info().name());
+            //     "[UNKNOWN]".to_string()
+            // }
+            "BOOL" => r.get::<bool, _>(i).to_string(),
+            "CHAR" => r.get::<String, _>(i).to_string(),
+            "VARCHAR" => {
+                if let Some(value) = r.get::<Option<String>, _>(i) {
+                    return value;
+                }
+                return "[NULL]".to_string();
+            }
+            "NAME" => {
+                if let Some(value) = r.get::<Option<String>, _>(i) {
+                    return value;
+                }
+                return "[NULL]".to_string();
+            }
+            _ => {
+                debug!("unknown type: {}", c.type_info().name());
+                "[UNKNOWN]".to_string()
+            }
+        };
+
+        return value;
     }
 }
 
@@ -151,7 +211,7 @@ impl DataSourceNode for PostgresDataSourceNode {
         match query.fetch_all(pool).await {
             Err(e) => return Err(anyhow!(PostgresError::QueryError(e))),
             Ok(rows) => {
-                debug!("results: {:?}", rows);
+                // debug!("results: {:?}", rows);
 
                 if rows.is_empty() {
                     return Ok(QueryResult {
@@ -171,10 +231,23 @@ impl DataSourceNode for PostgresDataSourceNode {
                         })
                         .collect();
                 }
+                debug!("columns: {:?}", columns);
+
+                let rows: Vec<Vec<String>> = rows
+                    .iter()
+                    // .map(|r| r.iter().map(|c| c.to_string()).collect())
+                    .map(|r| {
+                        r.columns()
+                            .iter()
+                            .enumerate()
+                            .map(|(i, c)| self.decode(r, c, i))
+                            .collect()
+                    })
+                    .collect();
 
                 return Ok(QueryResult {
                     columns: columns,
-                    rows: vec![],
+                    rows: rows,
                 });
             }
         }
