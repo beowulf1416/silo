@@ -7,9 +7,7 @@ fn main() {
         "org.devphilplus.silo.gresource",
     );
 
-    let status = Command::new("glib-compile-schemas")
-        .arg("assets/.")
-        .status();
+    let status = Command::new("glib-compile-schemas").arg(".").status();
 
     if let Ok(status) = status {
         if !status.success() {

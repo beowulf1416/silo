@@ -13,5 +13,9 @@
       <default>false</default>
       <summary>Default window maximized state</summary>
     </key>
+    <key name="workspace-path" type="s">
+      <default></default>
+      <summary>Default workspace path</summary>
+    </key>
   </schema>
 </schemalist>
