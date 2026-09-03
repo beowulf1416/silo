@@ -228,29 +228,47 @@ impl MainWindow {
 
         // check if workspace_path is set
         let imp = self.imp();
-        let mut workspace_path = imp
-            .app
-            .borrow()
-            .clone()
-            .expect("expecting App")
-            .workspace_path();
-        debug!("workspace_path 1: {:?}", workspace_path);
+        // let mut workspace_path = imp
+        //     .app
+        //     .borrow()
+        //     .clone()
+        //     .expect("expecting App")
+        //     .workspace_path();
+        // debug!("workspace_path 1: {:?}", workspace_path);
 
-        if workspace_path.is_none() {
-            // let user choose a workspace path
-            if let Some(action) = self.lookup_action("workspace-open") {
-                action.activate(None);
-            }
+        // if workspace_path.is_none() {
+        //     // let user choose a workspace path
+        //     if let Some(action) = self.lookup_action("workspace-open") {
+        //         action.activate(None);
+        //     }
 
-            workspace_path = imp
-                .app
-                .borrow()
-                .clone()
-                .expect("expecting App")
-                .workspace_path();
+        //     workspace_path = imp
+        //         .app
+        //         .borrow()
+        //         .clone()
+        //         .expect("expecting App")
+        //         .workspace_path();
 
-            debug!("workspace_path 2: {:?}", workspace_path);
-        };
+        //     debug!("workspace_path 2: {:?}", workspace_path);
+        // };
+
+        // if let Some(workspace_path) = imp.workspace_path() {
+        //     debug!("workspace_path: {:?}", workspace_path);
+
+        //     // check if data_sources.json exists in the workspace path
+        //     if let Ok(data) =
+        //         std::fs::read_to_string(format!("{}/data_sources.json", workspace_path))
+        //     {
+        //         match serde_json::from_str(&data) {
+        //             Err(e) => {
+        //                 debug!("failed to parse data_sources.json: {}", e);
+        //             }
+        //             Ok(data_sources) => {
+        //                 debug!("data_sources: {:?}", data_sources);
+        //             }
+        //         }
+        //     }
+        // }
 
         let sources = self.data_sources();
 
@@ -270,7 +288,8 @@ impl MainWindow {
             .map(|item| (item.0.clone(), item.1.as_ref().unwrap().get_configuration()))
             .collect();
 
-        if let Some(path) = workspace_path {
+        if let Some(path) = imp.workspace_path() {
+            // if let Some(path) = workspace_path {
             let f = format!("{}/data_sources.json", path);
             let mut file = std::fs::File::create(std::path::Path::new(&f))?;
             serde_json::to_writer(&mut file, &dsns)?;
