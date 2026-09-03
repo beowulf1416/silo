@@ -210,7 +210,7 @@ impl PostgresConnectionEditor {
         let entry_name_valid = std::rc::Rc::new(std::cell::Cell::new(false));
         let entry_db_valid = std::rc::Rc::new(std::cell::Cell::new(false));
         let entry_host_valid = std::rc::Rc::new(std::cell::Cell::new(false));
-        let entry_port_valid = std::rc::Rc::new(std::cell::Cell::new(false));
+        let entry_port_valid = std::rc::Rc::new(std::cell::Cell::new(true));
         let entry_user_valid = std::rc::Rc::new(std::cell::Cell::new(false));
         let entry_password_valid = std::rc::Rc::new(std::cell::Cell::new(false));
 
@@ -425,6 +425,7 @@ impl ObjectImpl for PostgresConnectionEditor {
             0.0,
         ));
         self.entry_port.set_numeric(true);
+        self.entry_port.set_value(5432 as f64);
 
         self.entry_user.set_tooltip_text(Some("User"));
         self.entry_user.set_placeholder_text(Some("User"));

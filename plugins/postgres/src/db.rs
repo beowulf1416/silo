@@ -1,11 +1,12 @@
 use tracing::{debug, error};
 
-use std::sync::OnceLock;
+// use std::sync::OnceLock;
 
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 
 use tokio::runtime::{Builder, Runtime};
+use tokio::sync::OnceLock;
 
 enum DbResult {
     FetchSchemas(Vec<String>),
