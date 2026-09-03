@@ -15,6 +15,8 @@ adw = { version = "*", package = "libadwaita", features = ["v1_7"] }
 async-channel = "*"
 async-trait = "*"
 
+sqlx = { version = "*", features = ["runtime-tokio"] }
+
 anyhow = "*"
 thiserror = "*"
 
