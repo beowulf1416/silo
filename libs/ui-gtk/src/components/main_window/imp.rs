@@ -213,23 +213,91 @@ impl MainWindow {
         let window = self.obj();
         // let settings = gio::Settings::new(crate::APP_ID);
 
-        let schema_dir = std::path::Path::new("libs/ui-gtk");
-        if let Ok(source) = gio::SettingsSchemaSource::from_directory(schema_dir, None, false) {
-            if let Some(schema) = source.lookup(crate::APP_ID, false) {
-                let settings =
-                    gio::Settings::new_full(&schema, Option::<&SettingsBackend>::None, None);
+        // let schema_dir = std::path::Path::new("libs/ui-gtk");
+        // if let Ok(source) = gio::SettingsSchemaSource::from_directory(schema_dir, None, false) {
+        //     if let Some(schema) = source.lookup(crate::APP_ID, false) {
+        //         let settings =
+        //             gio::Settings::new_full(&schema, Option::<&SettingsBackend>::None, None);
 
-                let (width, height) = window.default_size();
-                let _ = settings.set_int("window-width", width);
-                let _ = settings.set_int("window-height", height);
+        //         let (width, height) = window.default_size();
+        //         let _ = settings.set_int("window-width", width);
+        //         let _ = settings.set_int("window-height", height);
 
-                let _ = settings.set_boolean("is-maximized", window.is_maximized());
+        //         let _ = settings.set_boolean("is-maximized", window.is_maximized());
 
-                let workspace_path = self.workspace_path().unwrap_or(String::from(""));
-                let _ = settings.set_string("workspace-path", workspace_path.as_str());
+        //         let workspace_path = self.workspace_path().unwrap_or(String::from(""));
+        //         let _ = settings.set_string("workspace-path", workspace_path.as_str());
+        //     }
+        // } else {
+        //     error!("Failed to load settings schema");
+        // }
+
+        if let Some(dirs) = directories::ProjectDirs::from("com", "devphilplus", "silo") {
+            let config_dir = dirs.config_dir();
+            let _ = std::fs::create_dir_all(&config_dir);
+            let config_file = config_dir.join("config.json");
+
+            // let (width, height) = window.default_size();
+            let width = window.width();
+            let height = window.height();
+
+            let config = serde_json::json!({
+                "window": {
+                    "width": width,
+                    "height": height,
+                    "maximised": window.is_maximized()
+                },
+                "workspace_path": self.workspace_path().unwrap_or(String::from(""))
+            });
+
+            let _ = std::fs::write(&config_file, serde_json::to_string(&config).unwrap());
+        }
+    }
+
+    pub fn restore_settings(&self) {
+        debug!("restoring settings...");
+
+        if let Some(dirs) = directories::ProjectDirs::from("com", "devphilplus", "silo") {
+            let config_dir = dirs.config_dir();
+            debug!("config_dir: {:?}", config_dir);
+
+            let config_file = config_dir.join("config.json");
+
+            if let Ok(data) = std::fs::read(&config_file) {
+                if let Ok(config) = serde_json::from_slice::<serde_json::Value>(&data) {
+                    if let Some(window) = config.get("window") {
+                        if let Some(width) = window.get("width") {
+                            if let Some(width) = width.as_u64() {
+                                debug!("width: {}", width);
+                                // self.obj().set_default_size(width as i32, -1);
+                                self.obj().set_width_request(width as i32);
+                            }
+                        }
+
+                        if let Some(height) = window.get("height") {
+                            if let Some(height) = height.as_u64() {
+                                debug!("height: {}", height);
+                                // self.obj().set_default_size(-1, height as i32);
+                                self.obj().set_height_request(height as i32);
+                            }
+                        }
+
+                        if let Some(maximised) = window.get("maximised") {
+                            if let Some(maximised) = maximised.as_bool() {
+                                debug!("maximised: {}", maximised);
+                                self.obj().set_maximized(maximised);
+                            }
+                        }
+                    }
+
+                    if let Some(workspace_path) = config.get("workspace_path") {
+                        if let Some(workspace_path) = workspace_path.as_str() {
+                            self.workspace_path
+                                .replace(Some(workspace_path.to_string()));
+                        }
+                    }
+                }
             }
-        } else {
-            error!("Failed to load settings schema");
         }
     }
 

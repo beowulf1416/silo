@@ -40,7 +40,8 @@ impl MainWindow {
             .build();
 
         window.set_app(&application);
-        window.restore_state();
+        // window.restore_state();
+        window.imp().restore_settings();
 
         return window;
     }
@@ -282,33 +283,33 @@ impl MainWindow {
         return Ok(());
     }
 
-    fn restore_state(&self) {
-        debug!("restoring state...");
+    // fn restore_state(&self) {
+    //     debug!("restoring state...");
 
-        // let settings = gio::Settings::new(crate::APP_ID);
-        let schema_dir = std::path::Path::new("libs/ui-gtk");
-        if let Ok(source) = gio::SettingsSchemaSource::from_directory(schema_dir, None, false) {
-            if let Some(schema) = source.lookup(crate::APP_ID, false) {
-                let settings =
-                    gio::Settings::new_full(&schema, Option::<&gio::SettingsBackend>::None, None);
+    //     // let settings = gio::Settings::new(crate::APP_ID);
+    //     let schema_dir = std::path::Path::new("libs/ui-gtk");
+    //     if let Ok(source) = gio::SettingsSchemaSource::from_directory(schema_dir, None, false) {
+    //         if let Some(schema) = source.lookup(crate::APP_ID, false) {
+    //             let settings =
+    //                 gio::Settings::new_full(&schema, Option::<&gio::SettingsBackend>::None, None);
 
-                let width = settings.int("window-width");
-                let height = settings.int("window-height");
-                let is_maximized = settings.boolean("is-maximized");
-                let workspace_path = settings.string("workspace-path");
+    //             let width = settings.int("window-width");
+    //             let height = settings.int("window-height");
+    //             let is_maximized = settings.boolean("is-maximized");
+    //             let workspace_path = settings.string("workspace-path");
 
-                let _ = self.set_default_size(width, height);
-                let _ = self.set_maximized(is_maximized);
+    //             let _ = self.set_default_size(width, height);
+    //             let _ = self.set_maximized(is_maximized);
 
-                let imp = self.imp();
-                if let Err(e) = imp.set_workspace_path(&workspace_path.to_string()) {
-                    error!("Failed to set workspace path: {}", e);
+    //             let imp = self.imp();
+    //             if let Err(e) = imp.set_workspace_path(&workspace_path.to_string()) {
+    //                 error!("Failed to set workspace path: {}", e);
 
-                    imp.notify(StatusMessage::Error(e.to_string()));
-                }
-            }
-        } else {
-            error!("Failed to load settings schema source");
-        }
-    }
+    //                 imp.notify(StatusMessage::Error(e.to_string()));
+    //             }
+    //         }
+    //     } else {
+    //         error!("Failed to load settings schema source");
+    //     }
+    // }
 }

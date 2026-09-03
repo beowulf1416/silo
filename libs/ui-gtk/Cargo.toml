@@ -20,6 +20,8 @@ thiserror = "*"
 
 sourceview5 = "*"
 
+directories = "*"
+
 # projects
 silo-base = { path = "../silo-base" }
 silo-plugin = { path = "../silo-plugin" }
