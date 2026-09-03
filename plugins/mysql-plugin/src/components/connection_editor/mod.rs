@@ -9,7 +9,7 @@ use silo_plugin::ApplicationMessage;
 glib::wrapper! {
     pub struct MySQLConnectionEditor(ObjectSubclass<imp::MySQLConnectionEditor>)
         @extends gtk::Widget, gtk::Box,
-        @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget
+        @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget, gio::ActionMap
     ;
 }
 
