@@ -82,23 +82,6 @@ impl Node for MySQLDataSourceNode {
     }
 
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
-        // match self.pool.get_connection().await {
-        //     Err(e) => {
-        //         error!("unable to obtain connection pool: {}", e);
-        //         return Err(anyhow::anyhow!("unable to obtain connection pool: {}", e));
-        //     }
-        //     Ok(pool) => {
-        //         let mut nodes: Vec<Arc<dyn Node>> = vec![];
-
-        //         let boxed: Arc<dyn Node> =
-        //             Arc::new(SchemaTablesNode::new(pool.clone(), &self.name));
-        //         nodes.push(boxed);
-
-        //         // return Err(anyhow::anyhow!("//todo not implemented"));
-        //         return Ok(Some(nodes));
-        //     }
-        // }
-
         let mut nodes: Vec<Arc<dyn Node>> = vec![];
 
         let boxed: Arc<dyn Node> = Arc::new(SchemaTablesNode::new(self.pool.clone(), &self.name));

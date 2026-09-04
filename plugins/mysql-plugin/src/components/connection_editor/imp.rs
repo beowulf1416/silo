@@ -74,7 +74,6 @@ impl MySQLConnectionEditor {
 
                 glib::MainContext::default().spawn_local(async move {
                     let cm = crate::db::get_connection_manager().await;
-
                     let name_clone = name.clone();
 
                     let handle = get_runtime().spawn(async move {
