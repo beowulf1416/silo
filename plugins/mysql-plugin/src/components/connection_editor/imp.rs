@@ -68,27 +68,52 @@ impl MySQLConnectionEditor {
                 let name = window.entry_name.text().to_string();
                 let db = window.entry_db.text().to_string();
                 let host = window.entry_host.text().to_string();
-                let port = window.entry_port.value_as_int() as u32;
+                let port = window.entry_port.value_as_int() as u16;
                 let user = window.entry_user.text().to_string();
                 let pw = window.entry_pw.text().to_string();
 
-                let boxed: Arc<dyn Node> = Arc::new(MySQLDataSourceNode::new(
-                    name.clone().as_str(),
-                    ConnectionSettings {
-                        name,
-                        db,
-                        host,
-                        port,
-                        user,
-                        pw,
-                    },
-                ));
-                let _ = window
-                    .sender
-                    .borrow()
-                    .as_ref()
-                    .expect("//todo sender")
-                    .send_blocking(ApplicationMessage::DataSourceAdd(boxed));
+                glib::MainContext::default().spawn_local(async move {
+                    let cm = crate::db::get_connection_manager().await;
+
+                    let name_clone = name.clone();
+
+                    let handle = get_runtime().spawn(async move {
+                        cm.add_connection(
+                            &name_clone,
+                            &db.clone(),
+                            &host.clone(),
+                            port,
+                            &user.clone(),
+                            &pw.clone(),
+                        )
+                        .await
+                    });
+
+                    match handle.await {
+                        Err(e) => {
+                            error!("unable to add connection: {}", e);
+                        }
+                        Ok(result) => match result {
+                            Err(e) => {
+                                error!("unable to add connection: {}", e);
+                            }
+                            Ok(pool) => {
+                                let boxed: Arc<dyn Node> = Arc::new(MySQLDataSourceNode::new(
+                                    &name.clone().as_str(),
+                                    &pool,
+                                ));
+
+                                let _ = window
+                                    .sender
+                                    .borrow()
+                                    .as_ref()
+                                    .expect("//todo sender")
+                                    .send(ApplicationMessage::DataSourceAdd(boxed))
+                                    .await;
+                            }
+                        },
+                    }
+                });
             }
         ));
         self.actions.add_action(&action);

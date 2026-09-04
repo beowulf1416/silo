@@ -5,9 +5,13 @@ use gtk::{
     prelude::*,
     subclass::prelude::*,
 };
-use std::sync::Arc;
+use sqlx::mysql::MySqlPoolOptions;
+use sqlx::{MySql, Pool};
 
-use tracing::debug;
+use std::sync::Arc;
+use tokio::sync::OnceCell;
+
+use tracing::{debug, error};
 
 use crate::nodes::ConnectionSettings;
 use crate::nodes::schema_functions_node::SchemaFunctionsNode;
@@ -18,16 +22,57 @@ use silo_plugin::node::{DataSourceNode, Node, QueryResult};
 #[derive(Debug, Clone)]
 pub struct MySQLDataSourceNode {
     name: String,
-    settings: Arc<ConnectionSettings>,
+    // settings: Arc<ConnectionSettings>,
+    // pool: OnceCell<Pool<MySql>>,
+    pool: sqlx::mysql::MySqlPool,
 }
 
 impl MySQLDataSourceNode {
-    pub fn new(name: &str, settings: ConnectionSettings) -> Self {
+    pub fn new(name: &str, pool: &sqlx::mysql::MySqlPool) -> Self {
         return Self {
             name: name.to_string(),
-            settings: Arc::new(settings),
+            // settings: Arc::new(settings),
+            pool: pool.clone(),
         };
     }
+
+    // async fn get_pool(&self) -> anyhow::Result<&Pool<MySql>> {
+    //     match self
+    //         .pool
+    //         .get_or_try_init(|| async {
+    //             let user = self.settings.user.clone();
+    //             let pw = self.settings.pw.clone();
+    //             let host = self.settings.host.clone();
+    //             let port = self.settings.port.clone();
+    //             let db = self.settings.db.clone();
+
+    //             let uri = format!("mysql://{user}:{pw}@{host}:{port}/{db}");
+
+    //             match MySqlPoolOptions::new()
+    //                 .max_connections(5)
+    //                 .connect(&uri)
+    //                 .await
+    //             {
+    //                 Err(e) => {
+    //                     error!("unable to connect to database: {}", e);
+    //                     return Err(anyhow::anyhow!("unable to connect to database: {}", e));
+    //                 }
+    //                 Ok(pool) => {
+    //                     return Ok(pool);
+    //                 }
+    //             }
+    //         })
+    //         .await
+    //     {
+    //         Err(e) => {
+    //             // return Err(anyhow::anyhow!(PostgresError::ConnectionError(e)));
+    //             return Err(e);
+    //         }
+    //         Ok(pool) => {
+    //             return Ok(pool);
+    //         }
+    //     }
+    // }
 }
 
 #[async_trait]
@@ -37,7 +82,29 @@ impl Node for MySQLDataSourceNode {
     }
 
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
-        return Err(anyhow::anyhow!("//todo not implemented"));
+        // match self.pool.get_connection().await {
+        //     Err(e) => {
+        //         error!("unable to obtain connection pool: {}", e);
+        //         return Err(anyhow::anyhow!("unable to obtain connection pool: {}", e));
+        //     }
+        //     Ok(pool) => {
+        //         let mut nodes: Vec<Arc<dyn Node>> = vec![];
+
+        //         let boxed: Arc<dyn Node> =
+        //             Arc::new(SchemaTablesNode::new(pool.clone(), &self.name));
+        //         nodes.push(boxed);
+
+        //         // return Err(anyhow::anyhow!("//todo not implemented"));
+        //         return Ok(Some(nodes));
+        //     }
+        // }
+
+        let mut nodes: Vec<Arc<dyn Node>> = vec![];
+
+        let boxed: Arc<dyn Node> = Arc::new(SchemaTablesNode::new(self.pool.clone(), &self.name));
+        nodes.push(boxed);
+
+        return Ok(Some(nodes));
     }
 
     fn context_menu(&self) -> Option<gio::Menu> {
@@ -72,11 +139,11 @@ impl DataSourceNode for MySQLDataSourceNode {
 
     fn get_configuration(&self) -> serde_json::Value {
         return serde_json::json!({
-            "name": self.settings.name.clone(),
-            "host": self.settings.host.clone(),
-            "port": self.settings.port.clone(),
-            "user": self.settings.user.clone(),
-            "pw": self.settings.pw.clone(),
+            "name": self.name.clone(),
+            // "host": self.settings.host.clone(),
+            // "port": self.settings.port.clone(),
+            // "user": self.settings.user.clone(),
+            // "pw": self.settings.pw.clone(),
         });
     }
 }
