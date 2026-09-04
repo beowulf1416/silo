@@ -21,6 +21,7 @@ use sqlx::{
 use sqlx::{PgPool, Pool, Postgres, Row};
 use tokio::sync::OnceCell;
 
+use crate::get_runtime;
 use crate::nodes::schema_node::SchemaNode;
 use crate::{PostgresError, nodes::ConnectionSettings};
 use silo_plugin::node::{DataSourceNode, Node, QueryColumn, QueryResult};
@@ -29,78 +30,122 @@ use silo_plugin::node::{DataSourceNode, Node, QueryColumn, QueryResult};
 pub struct PostgresDataSourceNode {
     name: String,
 
-    settings: Arc<ConnectionSettings>,
-    pool: OnceCell<Pool<Postgres>>,
+    // settings: Arc<ConnectionSettings>,
+    // pool: OnceCell<Pool<Postgres>>,
+    pool: sqlx::postgres::PgPool,
 }
 
 impl PostgresDataSourceNode {
-    pub fn new(name: &str, settings: ConnectionSettings) -> Self {
+    pub fn new(name: &str, pool: &sqlx::postgres::PgPool) -> Self {
         return Self {
             name: name.to_string(),
-            settings: Arc::new(settings),
-            pool: OnceCell::new(),
+            // settings: Arc::new(settings),
+            // pool: OnceCell::new(),
+            pool: pool.clone(),
         };
     }
 
-    async fn get_pool(&self) -> anyhow::Result<&Pool<Postgres>> {
-        match self
-            .pool
-            .get_or_try_init(|| async {
-                let user = self.settings.user.clone();
-                let pw = self.settings.pw.clone();
-                let host = self.settings.host.clone();
-                let port = self.settings.port.clone();
-                let db = self.settings.db.clone();
+    // async fn get_pool(&self) -> anyhow::Result<&Pool<Postgres>> {
+    //     match self
+    //         .pool
+    //         .get_or_try_init(|| async {
+    //             let user = self.settings.user.clone();
+    //             let pw = self.settings.pw.clone();
+    //             let host = self.settings.host.clone();
+    //             let port = self.settings.port.clone();
+    //             let db = self.settings.db.clone();
 
-                let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
+    //             let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
 
-                match PgPoolOptions::new().max_connections(5).connect(&uri).await {
-                    Err(e) => {
-                        error!("unable to connect to database: {}", e);
-                        return Err(anyhow::anyhow!(PostgresError::ConnectionError(e)));
-                    }
-                    Ok(pool) => {
-                        return Ok(pool);
-                    }
-                }
-            })
-            .await
-        {
-            Err(e) => {
-                // return Err(anyhow::anyhow!(PostgresError::ConnectionError(e)));
-                return Err(e);
-            }
-            Ok(pool) => {
-                return Ok(pool);
-            }
-        }
-    }
+    //             match PgPoolOptions::new().max_connections(5).connect(&uri).await {
+    //                 Err(e) => {
+    //                     error!("unable to connect to database: {}", e);
+    //                     return Err(anyhow::anyhow!(PostgresError::ConnectionError(e)));
+    //                 }
+    //                 Ok(pool) => {
+    //                     return Ok(pool);
+    //                 }
+    //             }
+    //         })
+    //         .await
+    //     {
+    //         Err(e) => {
+    //             // return Err(anyhow::anyhow!(PostgresError::ConnectionError(e)));
+    //             return Err(e);
+    //         }
+    //         Ok(pool) => {
+    //             return Ok(pool);
+    //         }
+    //     }
+    // }
 
     async fn fetch_schemas_async(&self) -> anyhow::Result<Vec<String>> {
         debug!("fetch_schemas_async");
 
-        match self.get_pool().await {
+        let pool = self.pool.clone();
+        let sql = "select schema_name from information_schema.schemata";
+
+        let handle = get_runtime().spawn(async move {
+            return sqlx::query(sql).fetch_all(&pool).await;
+        });
+
+        match handle.await {
             Err(e) => {
-                error!("unable to get pool: {}", e);
+                // JoinError
+                error!("unable to fetch schemas: {}", e);
                 return Err(anyhow::anyhow!(e));
             }
-            Ok(pool) => {
-                let sql = "select schema_name from information_schema.schemata";
-                match sqlx::query(sql).fetch_all(pool).await {
-                    Err(e) => {
-                        error!("unable to fetch schemas: {}", e);
-                        return Err(anyhow::anyhow!(e));
-                    }
-                    Ok(results) => {
-                        let schemas: Vec<String> = results
-                            .into_iter()
-                            .map(|r| r.get::<String, _>("schema_name"))
-                            .collect();
-                        return Ok(schemas);
-                    }
+            Ok(result) => match result {
+                Err(e) => {
+                    error!("unable to fetch schemas: {}", e);
+                    return Err(anyhow::anyhow!(e));
                 }
-            }
+                Ok(rows) => {
+                    let schemas: Vec<String> = rows
+                        .into_iter()
+                        .map(|r| r.get::<String, _>("schema_name"))
+                        .collect();
+                    return Ok(schemas);
+                }
+            },
         }
+
+        // match sqlx::query(sql).fetch_all(pool).await {
+        //     Err(e) => {
+        //         error!("unable to fetch schemas: {}", e);
+        //         return Err(anyhow::anyhow!(e));
+        //     }
+        //     Ok(results) => {
+        //         let schemas: Vec<String> = results
+        //             .into_iter()
+        //             .map(|r| r.get::<String, _>("schema_name"))
+        //             .collect();
+        //         return Ok(schemas);
+        //     }
+        // }
+
+        // match self.pool.await {
+        //     Err(e) => {
+        //         error!("unable to get pool: {}", e);
+        //         return Err(anyhow::anyhow!(e));
+        //     }
+        //     Ok(pool) => {
+        //         let sql = "select schema_name from information_schema.schemata";
+        //         match sqlx::query(sql).fetch_all(pool).await {
+        //             Err(e) => {
+        //                 error!("unable to fetch schemas: {}", e);
+        //                 return Err(anyhow::anyhow!(e));
+        //             }
+        //             Ok(results) => {
+        //                 let schemas: Vec<String> = results
+        //                     .into_iter()
+        //                     .map(|r| r.get::<String, _>("schema_name"))
+        //                     .collect();
+        //                 return Ok(schemas);
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     fn decode(&self, r: &PgRow, c: &PgColumn, i: usize) -> String {
@@ -154,7 +199,8 @@ impl Node for PostgresDataSourceNode {
                 return Err(anyhow!(PostgresError::SchemaError));
             }
             Ok(schemas) => {
-                let pool = self.get_pool().await?;
+                // let pool = self.get_pool().await?;
+                let pool = self.pool.clone();
 
                 let mut result: Vec<Arc<dyn Node>> = vec![];
                 for schema in schemas {
@@ -204,62 +250,75 @@ impl DataSourceNode for PostgresDataSourceNode {
     async fn query(&self, sql: &str) -> anyhow::Result<QueryResult> {
         debug!("PostgresDataSourceNode::query {}", sql);
 
-        let mut builder: sqlx::QueryBuilder<Postgres> = sqlx::QueryBuilder::new(sql);
-        let query = builder.build();
+        let sql = String::from(sql);
+        let pool = self.pool.clone();
 
-        let pool = self.get_pool().await?;
-        match query.fetch_all(pool).await {
-            Err(e) => return Err(anyhow!(PostgresError::QueryError(e))),
-            Ok(rows) => {
-                // debug!("results: {:?}", rows);
+        let handle = get_runtime().spawn(async move {
+            let mut builder: sqlx::QueryBuilder<Postgres> = sqlx::QueryBuilder::new(sql);
+            let query = builder.build();
 
-                if rows.is_empty() {
-                    return Ok(QueryResult {
-                        columns: vec![],
-                        rows: vec![],
-                    });
+            return query.fetch_all(&pool).await;
+        });
+
+        match handle.await {
+            Err(e) => {
+                error!("unable to execute query: {}", e);
+                return Err(anyhow::anyhow!(e));
+            }
+            Ok(result) => match result {
+                Err(e) => {
+                    error!("unable to execute query: {}", e);
+                    return Err(anyhow::anyhow!(e));
                 }
+                Ok(rows) => {
+                    if rows.is_empty() {
+                        return Ok(QueryResult {
+                            columns: vec![],
+                            rows: vec![],
+                        });
+                    }
 
-                let mut columns: Vec<QueryColumn> = vec![];
-                if let Some(first_row) = rows.get(0) {
-                    columns = first_row
-                        .columns()
+                    let mut columns: Vec<QueryColumn> = vec![];
+                    if let Some(first_row) = rows.get(0) {
+                        columns = first_row
+                            .columns()
+                            .iter()
+                            .map(|c| QueryColumn {
+                                name: c.name().to_string(),
+                                data_type: c.type_info().name().to_string(),
+                            })
+                            .collect();
+                    }
+                    debug!("columns: {:?}", columns);
+
+                    let rows: Vec<Vec<String>> = rows
                         .iter()
-                        .map(|c| QueryColumn {
-                            name: c.name().to_string(),
-                            data_type: c.type_info().name().to_string(),
+                        // .map(|r| r.iter().map(|c| c.to_string()).collect())
+                        .map(|r| {
+                            r.columns()
+                                .iter()
+                                .enumerate()
+                                .map(|(i, c)| self.decode(r, c, i))
+                                .collect()
                         })
                         .collect();
+
+                    return Ok(QueryResult {
+                        columns: columns,
+                        rows: rows,
+                    });
                 }
-                debug!("columns: {:?}", columns);
-
-                let rows: Vec<Vec<String>> = rows
-                    .iter()
-                    // .map(|r| r.iter().map(|c| c.to_string()).collect())
-                    .map(|r| {
-                        r.columns()
-                            .iter()
-                            .enumerate()
-                            .map(|(i, c)| self.decode(r, c, i))
-                            .collect()
-                    })
-                    .collect();
-
-                return Ok(QueryResult {
-                    columns: columns,
-                    rows: rows,
-                });
-            }
+            },
         }
     }
 
     fn get_configuration(&self) -> serde_json::Value {
         return serde_json::json!({
-            "name": self.settings.name.clone(),
-            "host": self.settings.host.clone(),
-            "port": self.settings.port.clone(),
-            "user": self.settings.user.clone(),
-            "pw": self.settings.pw.clone(),
+            "name": self.name.clone(),
+            // "host": self.settings.host.clone(),
+            // "port": self.settings.port.clone(),
+            // "user": self.settings.user.clone(),
+            // "pw": self.settings.pw.clone(),
         });
     }
 }

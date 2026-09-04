@@ -1,85 +1,56 @@
+use std::cell::RefCell;
+use std::sync::Arc;
 use tracing::{debug, error};
 
-// use std::sync::OnceLock;
-
-use sqlx::PgPool;
-use sqlx::postgres::PgPoolOptions;
-
 use tokio::runtime::{Builder, Runtime};
-use tokio::sync::OnceLock;
+use tokio::sync::{OnceCell, RwLock};
 
-enum DbResult {
-    FetchSchemas(Vec<String>),
+pub struct ConnectionManager {
+    pools: RwLock<std::collections::HashMap<String, sqlx::Pool<sqlx::Postgres>>>,
 }
 
-struct DbManager {
-    pub name: String,
-    pub host: String,
-    pub port: u32,
-    pub user: String,
-    pub pw: String,
+static CM: OnceCell<ConnectionManager> = OnceCell::const_new();
 
-    pub pool: PgPool,
-    pub runtime: Runtime,
-}
-
-static DB: OnceLock<DbManager> = OnceLock::new();
-
-pub fn build_db_manager(
-    name: &str,
-    host: &str,
-    port: u32,
-    user: &str,
-    pw: &str,
-) -> Result<(), &'static str> {
-    // let runtime = Builder::new_multi_thread()
-    //     .worker_threads(4)
-    //     .enable_all()
-    //     .build()?;
-
-    match Builder::new_multi_thread()
-        .worker_threads(4)
-        .enable_all()
-        .build()
-    {
-        Err(e) => {
-            error!("Failed to create runtime: {}", e);
-            return Err("Failed to create runtime");
+pub async fn get_connection_manager() -> &'static ConnectionManager {
+    CM.get_or_init(|| async {
+        ConnectionManager {
+            pools: RwLock::new(std::collections::HashMap::new()),
         }
-        Ok(runtime) => {
-            match runtime.block_on(async {
-                match PgPoolOptions::new()
-                    .max_connections(4)
-                    .connect(format!("postgres://{user}:{pw}@{host}:{port}/{db}").as_str())
-                    .await
-                {
-                    Err(e) => {
-                        error!("unable to connect to database: {}", e);
-                        return Err("Failed to connect to database");
-                    }
-                    Ok(pool) => Ok(pool),
-                }
-            }) {
-                Err(e) => {
-                    error!("Failed to connect to database: {}", e);
-                    return Err("Failed to connect to database");
-                }
-                Ok(pool) => {
-                    DB.set(DbManager {
-                        name: name.to_string(),
-                        host: host.to_string(),
-                        port,
-                        user: user.to_string(),
-                        pw: pw.to_string(),
-                        pool,
-                        runtime,
-                    });
+    })
+    .await
+}
 
-                    return Ok(());
-                }
+impl ConnectionManager {
+    pub async fn add_connection(
+        &self,
+        name: &String,
+        db: &String,
+        host: &String,
+        port: u16,
+        user: &String,
+        pw: &String,
+    ) -> anyhow::Result<sqlx::Pool<sqlx::Postgres>> {
+        let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
+
+        match sqlx::postgres::PgPoolOptions::new()
+            .max_connections(5)
+            .connect(&uri)
+            .await
+        {
+            Err(e) => {
+                error!("unable to add connection: {}", e);
+                return Err(anyhow::anyhow!("unable to add connection: {}", e));
+            }
+            Ok(pool) => {
+                let mut pools = self.pools.write().await;
+                pools.insert(name.to_string(), pool.clone());
+                return Ok(pool.clone());
             }
         }
     }
-}
 
-pub fn fetch_schemas() -> Result<Vec<String>, &'static str> {}
+    pub async fn get_pool(&self, name: &str) -> Option<sqlx::Pool<sqlx::Postgres>> {
+        let pools = self.pools.read().await;
+        pools.get(name).cloned()
+    }
+}

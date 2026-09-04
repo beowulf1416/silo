@@ -1,11 +1,12 @@
-use tracing::debug;
-
 use async_trait::async_trait;
-use std::sync::Arc;
-
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
+use sqlx::{Arguments, Row};
+use std::sync::Arc;
+use tracing::{debug, error};
 
-use crate::nodes::ConnectionSettings;
+// use crate::nodes::ConnectionSettings;
+use crate::PostgresError;
+use crate::nodes::function_node::FunctionNode;
 use silo_plugin::node::{DataSourceNode, Node};
 
 #[derive(Debug, Clone)]
@@ -21,6 +22,31 @@ impl SchemaFunctionsNode {
             pool,
             schema_name: schema_name.clone(),
         };
+    }
+
+    pub async fn fetch_functions(&self) -> anyhow::Result<Vec<String>> {
+        let mut args = sqlx::postgres::PgArguments::default();
+        let _ = args.add(&self.schema_name);
+
+        let mut builder = sqlx::QueryBuilder::with_arguments(
+            "select \
+                  p.proname proc_name
+                from pg_proc p \
+                  join pg_namespace n \
+                    on p.pronamespace = n.oid \
+                where \
+                  n.nspname = $1 \
+                  and p.prokind = 'f'",
+            args,
+        );
+        let query = builder.build();
+
+        let results = query.fetch_all(&self.pool).await?;
+        let procs: Vec<String> = results
+            .into_iter()
+            .map(|r| r.get::<String, _>("proc_name"))
+            .collect();
+        return Ok(procs);
     }
 }
 
@@ -41,7 +67,25 @@ impl Node for SchemaFunctionsNode {
     // }
 
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
-        return Err(anyhow::anyhow!("//todo not implemented"));
+        match self.fetch_functions().await {
+            Err(e) => {
+                error!("unable to fetch children async {}", e);
+                return Err(anyhow::anyhow!(PostgresError::SchemaError));
+            }
+            Ok(functions) => {
+                // let schema_name = self.schema_name.clone();
+                let mut result: Vec<Arc<dyn Node>> = vec![];
+                for func in functions {
+                    let boxed: Arc<dyn Node> = Arc::new(FunctionNode::new(
+                        self.pool.clone(),
+                        &self.schema_name,
+                        &func,
+                    ));
+                    result.push(boxed);
+                }
+                return Ok(Some(result));
+            }
+        }
     }
 
     fn context_menu(&self) -> Option<gio::Menu> {
