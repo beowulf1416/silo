@@ -32,8 +32,8 @@ impl TableNode {
 
     pub async fn fetch_columns(&self) -> anyhow::Result<Vec<String>> {
         let mut args = sqlx::postgres::PgArguments::default();
-        args.add(&self.schema_name);
-        args.add(&self.table_name);
+        let _ = args.add(&self.schema_name);
+        let _ = args.add(&self.table_name);
 
         let mut builder = sqlx::QueryBuilder::with_arguments(
             "
