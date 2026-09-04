@@ -149,11 +149,12 @@ impl PostgresDataSourceNode {
     }
 
     fn decode(&self, r: &PgRow, c: &PgColumn, i: usize) -> String {
-        // let value = r
-        //     .try_get::<String, _>(i)
-        //     .or_else(|_| r.try_get::<i32, _>(i).map(|v| v.to_string()))
-        //     .unwrap_or_else(|_| "[NULL]".to_string());
-        // return value;
+        /*
+        SELECT typname AS type_name
+        FROM pg_type
+        WHERE typnamespace = 'pg_catalog'::regnamespace
+        ORDER BY typname;
+        */
 
         let value = match c.type_info().name() {
             // _ => {
