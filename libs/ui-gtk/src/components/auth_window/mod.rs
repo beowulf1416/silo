@@ -18,4 +18,8 @@ impl AuthWindow {
 
         return window;
     }
+
+    pub fn return_value(&self, pw: Option<String>) {
+        debug!("return_value: {:?}", pw);
+    }
 }

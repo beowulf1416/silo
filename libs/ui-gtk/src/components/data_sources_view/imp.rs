@@ -145,14 +145,9 @@ impl DataSourcesView {
     }
 
     pub fn build_tree(&self) -> gtk::ScrolledWindow {
-        // testing
-        // let boxed: Box<dyn Node> = Box::new(PostgresDataSourceNode::new("testing"));
-        // self.store.append(&glib::BoxedAnyObject::new(boxed));
-
         //todo
         let store = gio::ListStore::new::<glib::BoxedAnyObject>();
 
-        // let this = self.clone();
         let model = gtk::TreeListModel::new(store, false, false, move |obj| {
             let boxed = obj
                 .downcast_ref::<glib::BoxedAnyObject>()
@@ -213,7 +208,7 @@ impl DataSourcesView {
                     store_clone.remove_all();
                 }
                 Ok(result) => {
-                    debug!("result: {:?}", result);
+                    // debug!("result: {:?}", result);
                     store_clone.remove_all();
                     if let Some(children) = result {
                         for child in children {

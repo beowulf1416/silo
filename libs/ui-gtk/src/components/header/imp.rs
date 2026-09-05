@@ -77,49 +77,20 @@ impl ObjectImpl for Header {
         title_box.append(&icon);
         title_box.append(&label);
 
-        // self.header_bar.set_title_widget(Some(&title_box));
+        // let menu = self.build_main_menu();
 
-        // let menu_main = gio::Menu::new();
-        // menu_main.append(Some("_File"), None);
+        // let pop_menu = gtk::PopoverMenu::from_model(Some(&menu));
 
-        // // let sub_menu_workspace = gio::Menu::new();
-        // // sub_menu_workspace.append(Some("Open"), Some("win.workspace-open"));
-        // // menu_main.append_submenu(Some("Workspace"), &sub_menu_workspace);
+        // // menu button
+        // self.btn_menu.set_icon_name("open-menu-symbolic");
+        // self.btn_menu.set_tooltip_text(Some("Main Menu"));
+        // self.btn_menu.set_popover(Some(&pop_menu));
 
-        // let menu_section = gio::Menu::new();
-        // let item = gio::MenuItem::new(Some("Open workspace..."), Some("win.workspace-open"));
-        // menu_section.append_item(&item);
+        // // settings button
+        // self.btn_settings
+        //     .set_icon_name("preferences-system-symbolic");
+        // self.btn_settings.set_tooltip_text(Some("Settings"));
 
-        // let menu_section = gio::Menu::new();
-
-        // let menu_item = gio::MenuItem::new(Some("_Quit"), Some("win.quit"));
-        // menu_section.append_item(&menu_item);
-
-        // menu_main.insert_section(2, None, &menu_section);
-        //
-        let menu = self.build_main_menu();
-
-        let pop_menu = gtk::PopoverMenu::from_model(Some(&menu));
-
-        // menu button
-        self.btn_menu.set_icon_name("open-menu-symbolic");
-        self.btn_menu.set_tooltip_text(Some("Main Menu"));
-        self.btn_menu.set_popover(Some(&pop_menu));
-        // self.btn_menu.set_action_name(Some("win.quit"));
-        // self.header_bar.pack_start(&self.btn_menu);
-
-        // settings button
-        self.btn_settings
-            .set_icon_name("preferences-system-symbolic");
-        self.btn_settings.set_tooltip_text(Some("Settings"));
-        // self.header_bar.pack_end(&self.btn_settings);
-
-        // self.header_bar.set_hexpand(true);
-
-        // self.add_actions();
-        // self.setup_action_handlers();
-
-        // obj.append(&self.header_bar);
         obj.append(&title_box);
     }
 }

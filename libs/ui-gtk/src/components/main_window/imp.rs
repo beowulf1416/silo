@@ -1,12 +1,9 @@
 use gtk::gio::SettingsBackend;
 use tracing::{debug, error};
 
-// use async_channel::Sender;
 use std::cell::{OnceCell, RefCell};
-// use std::collections::HashMap;
-// use std::rc::Rc;
-use std::borrow::Borrow;
-use std::sync::Arc;
+// use std::borrow::Borrow;
+// use std::sync::Arc;
 
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::{
@@ -17,26 +14,19 @@ use gtk::{
     subclass::prelude::*,
 };
 
-// use super::MainWindowInputMessage;
-use silo_plugin::node::Node;
+// use silo_plugin::node::Node;
 use silo_plugin::{ApplicationMessage, StatusMessage};
 
 use crate::{
     APP_TITLE,
     app::App,
-    // components::data_source_view::DataSourceView,
     components::data_sources_view::DataSourcesView,
-    plugins::PluginRegistry,
+    // plugins::PluginRegistry,
 };
 use crate::{
     components::{editor_view::EditorView, header::Header},
-    plugins::Plugin,
+    // plugins::Plugin,
 };
-
-// #[derive(Debug, Clone)]
-// pub enum MainWindowInputMessage {
-//     CloseRequested,
-// }
 
 #[derive(Debug, Default)]
 pub struct MainWindow {
@@ -211,26 +201,6 @@ impl MainWindow {
     fn save_settings(&self) {
         debug!("save_settings");
         let window = self.obj();
-        // let settings = gio::Settings::new(crate::APP_ID);
-
-        // let schema_dir = std::path::Path::new("libs/ui-gtk");
-        // if let Ok(source) = gio::SettingsSchemaSource::from_directory(schema_dir, None, false) {
-        //     if let Some(schema) = source.lookup(crate::APP_ID, false) {
-        //         let settings =
-        //             gio::Settings::new_full(&schema, Option::<&SettingsBackend>::None, None);
-
-        //         let (width, height) = window.default_size();
-        //         let _ = settings.set_int("window-width", width);
-        //         let _ = settings.set_int("window-height", height);
-
-        //         let _ = settings.set_boolean("is-maximized", window.is_maximized());
-
-        //         let workspace_path = self.workspace_path().unwrap_or(String::from(""));
-        //         let _ = settings.set_string("workspace-path", workspace_path.as_str());
-        //     }
-        // } else {
-        //     error!("Failed to load settings schema");
-        // }
 
         if let Some(dirs) = directories::ProjectDirs::from("com", "devphilplus", "silo") {
             let config_dir = dirs.config_dir();
@@ -315,6 +285,9 @@ impl MainWindow {
 
         menu.append_section(Some("Workspace"), &section);
 
+        let item = gio::MenuItem::new(Some("test show auth"), Some("win.show-password-dialog"));
+        menu.append_item(&item);
+
         let section = gio::Menu::new();
         let item = gio::MenuItem::new(Some("_Quit"), Some("win.quit"));
         section.append_item(&item);
@@ -330,15 +303,6 @@ impl ObjectSubclass for MainWindow {
     type Type = super::MainWindow;
     // type ParentType = gtk::ApplicationWindow;
     type ParentType = adw::ApplicationWindow;
-
-    // fn class_init(klass: &mut Self::Class) {
-    //     // klass.bind_template();
-    //     // klass.bind_template_instance_callbacks();
-    // }
-
-    // fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
-    //     // obj.init_template();
-    // }
 }
 
 impl ObjectImpl for MainWindow {
@@ -355,9 +319,6 @@ impl ObjectImpl for MainWindow {
 
         let (sender, receiver_status) = async_channel::unbounded::<StatusMessage>();
         self.sender_status.replace(Some(sender));
-
-        // obj.set_default_size(800, 600);
-        // obj.set_titlebar(Some(&self.header_bar));
 
         let header_bar = adw::HeaderBar::builder()
             .title_widget(&self.header_bar)

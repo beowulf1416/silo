@@ -1,5 +1,3 @@
-use tracing::debug;
-
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::{
     gio,
@@ -8,14 +6,26 @@ use gtk::{
     prelude::*,
     subclass::prelude::*,
 };
+use std::cell::RefCell;
+use tracing::debug;
 
 #[derive(Debug, Default)]
 pub struct AuthWindowImp {
     pub(super) entry_name: gtk::Entry,
     pub(super) entry_pw: gtk::PasswordEntry,
+
+    pub(super) pw: RefCell<Option<String>>,
 }
 
-impl AuthWindowImp {}
+impl AuthWindowImp {
+    pub fn set_user(&self, user: &str) {
+        self.entry_name.set_text(user);
+    }
+
+    pub fn get_password(&self) -> String {
+        return self.entry_pw.text().to_string();
+    }
+}
 
 #[glib::object_subclass]
 impl ObjectSubclass for AuthWindowImp {
@@ -30,9 +40,11 @@ impl ObjectImpl for AuthWindowImp {
         let obj = self.obj();
 
         let grid = gtk::Grid::builder()
+            .hexpand(true)
             .row_spacing(12)
             .column_spacing(12)
-            .hexpand(true)
+            .margin_start(16)
+            .margin_end(16)
             .build();
 
         // row 0
@@ -52,13 +64,55 @@ impl ObjectImpl for AuthWindowImp {
         grid.attach(&self.entry_pw, 1, 1, 1, 1);
 
         // row 2
+        let box_actions = gtk::Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .hexpand(true)
+            .spacing(16)
+            .build();
+
         let btn_ok = gtk::Button::builder().label("OK").build();
+        btn_ok.connect_clicked(glib::clone!(
+            #[weak]
+            obj,
+            #[weak(rename_to = this)]
+            self,
+            move |_btn| {
+                this.pw.replace(Some(this.entry_pw.text().to_string()));
+
+                // let obj = this.obj();
+                obj.return_value(this.pw.borrow().clone());
+
+                obj.close();
+            }
+        ));
         let btn_cancel = gtk::Button::builder().label("Cancel").build();
+        btn_cancel.connect_clicked(glib::clone!(
+            #[weak]
+            obj,
+            move |_btn| {
+                obj.close();
+            }
+        ));
+        box_actions.append(&btn_ok);
+        box_actions.append(&btn_cancel);
 
-        grid.attach(&btn_ok, 1, 2, 1, 1);
-        grid.attach(&btn_cancel, 2, 2, 1, 1);
+        grid.attach(&box_actions, 1, 2, 1, 2);
 
-        obj.set_child(Some(&grid));
+        let title = gtk::Label::builder().label("Authenticate").build();
+        let header = adw::HeaderBar::builder().title_widget(&title).build();
+
+        let content = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .hexpand(true)
+            .vexpand(true)
+            .spacing(16)
+            // .margin_start(16)
+            // .margin_end(16)
+            .build();
+        content.append(&header);
+        content.append(&grid);
+
+        obj.set_content(Some(&content));
     }
 }
 

@@ -4,13 +4,14 @@ use gtk::gio::prelude::ActionMapExt;
 //     actions::workspace_open_action::workspace_open_action, components::main_window::MainWindow,
 // };
 
-use crate::components::main_window::MainWindow;
+use crate::{actions, components::main_window::MainWindow};
 
 pub mod data_source_add;
 pub mod data_source_new_query;
 pub mod data_source_remove;
 pub mod query_execute_action;
 pub mod quit;
+pub mod show_password_dialog_action;
 pub mod workspace_open_action;
 pub mod workspace_save_action;
 
@@ -34,5 +35,8 @@ pub fn setup_actions(window: &MainWindow) {
     window.add_action(&action);
 
     let action = query_execute_action::query_execute_action(&window);
+    window.add_action(&action);
+
+    let action = show_password_dialog_action::show_password_dialog_action(&window);
     window.add_action(&action);
 }
