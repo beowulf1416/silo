@@ -35,44 +35,6 @@ impl MySQLDataSourceNode {
             pool: pool.clone(),
         };
     }
-
-    // async fn get_pool(&self) -> anyhow::Result<&Pool<MySql>> {
-    //     match self
-    //         .pool
-    //         .get_or_try_init(|| async {
-    //             let user = self.settings.user.clone();
-    //             let pw = self.settings.pw.clone();
-    //             let host = self.settings.host.clone();
-    //             let port = self.settings.port.clone();
-    //             let db = self.settings.db.clone();
-
-    //             let uri = format!("mysql://{user}:{pw}@{host}:{port}/{db}");
-
-    //             match MySqlPoolOptions::new()
-    //                 .max_connections(5)
-    //                 .connect(&uri)
-    //                 .await
-    //             {
-    //                 Err(e) => {
-    //                     error!("unable to connect to database: {}", e);
-    //                     return Err(anyhow::anyhow!("unable to connect to database: {}", e));
-    //                 }
-    //                 Ok(pool) => {
-    //                     return Ok(pool);
-    //                 }
-    //             }
-    //         })
-    //         .await
-    //     {
-    //         Err(e) => {
-    //             // return Err(anyhow::anyhow!(PostgresError::ConnectionError(e)));
-    //             return Err(e);
-    //         }
-    //         Ok(pool) => {
-    //             return Ok(pool);
-    //         }
-    //     }
-    // }
 }
 
 #[async_trait]
