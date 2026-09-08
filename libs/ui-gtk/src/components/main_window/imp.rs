@@ -1,9 +1,8 @@
 use gtk::gio::SettingsBackend;
 use tracing::{debug, error};
 
-use std::cell::{OnceCell, RefCell};
-// use std::borrow::Borrow;
-// use std::sync::Arc;
+use std::cell::RefCell;
+use std::sync::Arc;
 
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::{
@@ -25,7 +24,7 @@ use crate::{
 };
 use crate::{
     components::{editor_view::EditorView, header::Header},
-    // plugins::Plugin,
+    model::data_source::DataSources,
 };
 
 #[derive(Debug, Default)]
@@ -40,6 +39,7 @@ pub struct MainWindow {
 
     pub(super) app: RefCell<Option<App>>,
 
+    pub(super) data_sources_model: DataSources,
     pub(super) data_sources: RefCell<Option<gio::ListStore>>,
 
     pub(super) workspace_path: RefCell<Option<String>>,
@@ -88,9 +88,10 @@ impl MainWindow {
                 error!("Failed to open data_sources.json: {}", e);
                 return Err(anyhow::anyhow!("Failed to open data_sources.json: {}", e));
             }
-            Ok(mut file) => {
+            Ok(file) => {
                 let reader = std::io::BufReader::new(file);
                 let config: serde_json::Value = serde_json::from_reader(reader)?;
+                debug!("config: {:?}", config);
 
                 return Ok(());
             }
@@ -113,6 +114,9 @@ impl MainWindow {
     fn setup_action_handlers(&self) {}
 
     fn data_sources(&self) -> gio::ListStore {
+        // let mut dsm = self.data_sources_model.borrow_mut();
+        // let _model = dsm.get_or_insert_with(|| DataSources::default());
+
         let mut sg = self.data_sources.borrow_mut();
         return sg
             .get_or_insert_with(|| gio::ListStore::new::<glib::BoxedAnyObject>())
@@ -152,7 +156,7 @@ impl MainWindow {
     }
 
     pub fn close_requested(&self) {
-        let obj = self.obj();
+        // let obj = self.obj();
 
         // check if there are unsaved changes
         // if so, show a confirmation dialog
@@ -262,8 +266,11 @@ impl MainWindow {
 
                     if let Some(workspace_path) = config.get("workspace_path") {
                         if let Some(workspace_path) = workspace_path.as_str() {
-                            self.workspace_path
-                                .replace(Some(workspace_path.to_string()));
+                            // self.workspace_path
+                            //     .replace(Some(workspace_path.to_string()));
+                            if let Err(e) = self.set_workspace_path(&String::from(workspace_path)) {
+                                error!("Failed to set workspace path: {}", e);
+                            }
                         }
                     }
                 }

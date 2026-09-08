@@ -1,6 +1,7 @@
 mod actions;
 mod app;
 mod components;
+mod model;
 mod plugins;
 
 use std::sync::OnceLock;

@@ -12,6 +12,7 @@ use std::sync::Arc;
 
 use crate::App;
 use crate::components::editor_view::EditorView;
+use crate::model::data_source::DataSource;
 
 use silo_plugin::node::{DataSourceNode, Node};
 use silo_plugin::{ApplicationMessage, StatusMessage};
@@ -70,9 +71,46 @@ impl MainWindow {
             .clone();
     }
 
-    pub fn data_source_add(&self, dsn: Arc<dyn Node>) {
-        let sources = self.data_sources();
-        sources.append(&glib::BoxedAnyObject::new(dsn));
+    pub fn data_source_add(&self, dsn: Arc<dyn Node>) -> anyhow::Result<()> {
+        let imp = self.imp();
+        match imp.data_sources_model.sources.write() {
+            Err(e) => {
+                error!("unable to obtain write lock on data sources: {}", e);
+                return Err(anyhow::anyhow!(
+                    "unable to obtain write lock on data sources {}",
+                    e
+                ));
+            }
+            Ok(mut sources) => {
+                let key = dsn.name().to_string();
+                match sources.get(&key) {
+                    Some(s) => {
+                        // source exists, throw error
+                        return Err(anyhow::anyhow!("dat source already exists"));
+                    }
+                    None => {
+                        sources.insert(
+                            dsn.name().to_string(),
+                            DataSource {
+                                name: dsn.name().to_string(),
+                                plugin: String::from(""),
+                                host: String::from(""),
+                                port: 0,
+                                user: String::from(""),
+                                pw: String::from(""),
+                                db: String::from(""),
+                            },
+                        );
+
+                        // add to store
+                        let sources = self.data_sources();
+                        sources.append(&glib::BoxedAnyObject::new(dsn));
+
+                        return Ok(());
+                    }
+                }
+            }
+        }
     }
 
     pub fn start_receivers(
@@ -184,7 +222,7 @@ impl MainWindow {
                 // imp.data_source_add(box_node);
                 self.data_source_add(box_node);
             }
-            ApplicationMessage::NewQueryEditorRequested(plugin_name) => {
+            ApplicationMessage::NewQueryEditorRequested(_plugin_name) => {
                 let imp = self.imp();
 
                 let editor =
@@ -228,48 +266,6 @@ impl MainWindow {
 
         // check if workspace_path is set
         let imp = self.imp();
-        // let mut workspace_path = imp
-        //     .app
-        //     .borrow()
-        //     .clone()
-        //     .expect("expecting App")
-        //     .workspace_path();
-        // debug!("workspace_path 1: {:?}", workspace_path);
-
-        // if workspace_path.is_none() {
-        //     // let user choose a workspace path
-        //     if let Some(action) = self.lookup_action("workspace-open") {
-        //         action.activate(None);
-        //     }
-
-        //     workspace_path = imp
-        //         .app
-        //         .borrow()
-        //         .clone()
-        //         .expect("expecting App")
-        //         .workspace_path();
-
-        //     debug!("workspace_path 2: {:?}", workspace_path);
-        // };
-
-        // if let Some(workspace_path) = imp.workspace_path() {
-        //     debug!("workspace_path: {:?}", workspace_path);
-
-        //     // check if data_sources.json exists in the workspace path
-        //     if let Ok(data) =
-        //         std::fs::read_to_string(format!("{}/data_sources.json", workspace_path))
-        //     {
-        //         match serde_json::from_str(&data) {
-        //             Err(e) => {
-        //                 debug!("failed to parse data_sources.json: {}", e);
-        //             }
-        //             Ok(data_sources) => {
-        //                 debug!("data_sources: {:?}", data_sources);
-        //             }
-        //         }
-        //     }
-        // }
-
         let sources = self.data_sources();
 
         let dsns: std::collections::HashMap<String, serde_json::Value> = sources
@@ -301,34 +297,4 @@ impl MainWindow {
 
         return Ok(());
     }
-
-    // fn restore_state(&self) {
-    //     debug!("restoring state...");
-
-    //     // let settings = gio::Settings::new(crate::APP_ID);
-    //     let schema_dir = std::path::Path::new("libs/ui-gtk");
-    //     if let Ok(source) = gio::SettingsSchemaSource::from_directory(schema_dir, None, false) {
-    //         if let Some(schema) = source.lookup(crate::APP_ID, false) {
-    //             let settings =
-    //                 gio::Settings::new_full(&schema, Option::<&gio::SettingsBackend>::None, None);
-
-    //             let width = settings.int("window-width");
-    //             let height = settings.int("window-height");
-    //             let is_maximized = settings.boolean("is-maximized");
-    //             let workspace_path = settings.string("workspace-path");
-
-    //             let _ = self.set_default_size(width, height);
-    //             let _ = self.set_maximized(is_maximized);
-
-    //             let imp = self.imp();
-    //             if let Err(e) = imp.set_workspace_path(&workspace_path.to_string()) {
-    //                 error!("Failed to set workspace path: {}", e);
-
-    //                 imp.notify(StatusMessage::Error(e.to_string()));
-    //             }
-    //         }
-    //     } else {
-    //         error!("Failed to load settings schema source");
-    //     }
-    // }
 }
