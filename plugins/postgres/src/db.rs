@@ -17,7 +17,7 @@ pub(super) struct ConnectionSettings {
 
 impl ConnectionSettings {
     pub fn set_pw(&mut self, pw: &String) {
-        self.pw = pw.clone();
+        self.pw = Some(pw.clone());
     }
 }
 
@@ -48,7 +48,8 @@ impl ConnectionManager {
         port: u16,
         user: &String,
         pw: Option<String>,
-    ) -> anyhow::Result<sqlx::Pool<sqlx::Postgres>> {
+    ) -> anyhow::Result<()> {
+        let pw = pw.unwrap_or_default();
         let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
 
         let settings = self.settings.read().await;
@@ -67,34 +68,18 @@ impl ConnectionManager {
                         host: host.clone(),
                         port,
                         user: user.clone(),
-                        pw: pw.clone(),
+                        pw: Some(pw.clone()),
                     },
                 );
 
                 return Ok(());
             }
         }
-
-        // match sqlx::postgres::PgPoolOptions::new()
-        //     .max_connections(5)
-        //     // .connect(&uri)
-        //     .await
-        // {
-        //     Err(e) => {
-        //         error!("unable to add connection: {}", e);
-        //         return Err(anyhow::anyhow!("unable to add connection: {}", e));
-        //     }
-        //     Ok(pool) => {
-        //         let mut pools = self.pools.write().await;
-        //         pools.insert(name.to_string(), pool.clone());
-        //         return Ok(pool.clone());
-        //     }
-        // }
     }
 
     pub async fn get_pool(&self, name: &str) -> anyhow::Result<sqlx::Pool<sqlx::Postgres>> {
         let settings = self.settings.read().await;
-        match settings.get(name.to_string()) {
+        match settings.get(&name.to_string()) {
             None => {
                 error!("connection does not exist {}", name);
                 return Err(anyhow::anyhow!("connection does not exist {}", name));

@@ -95,7 +95,7 @@ impl PostgresConnectionEditor {
                             &host.clone(),
                             port,
                             &user.clone(),
-                            &pw.clone(),
+                            Some(pw.clone()),
                         )
                         .await
                     });
