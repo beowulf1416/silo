@@ -5,7 +5,7 @@ use tracing::{debug, error};
 use tokio::runtime::{Builder, Runtime};
 use tokio::sync::{OnceCell, RwLock};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(super) struct ConnectionSettings {
     pub(super) name: String,
     pub(super) db: String,
@@ -42,69 +42,99 @@ pub async fn get_connection_manager() -> &'static ConnectionManager {
 impl ConnectionManager {
     pub async fn add_connection(
         &self,
-        name: &String,
-        db: &String,
-        host: &String,
-        port: u16,
-        user: &String,
-        pw: Option<String>,
+        // name: &String,
+        // db: &String,
+        // host: &String,
+        // port: u16,
+        // user: &String,
+        // pw: Option<String>,
+        setting: &ConnectionSettings,
     ) -> anyhow::Result<()> {
-        let pw = pw.unwrap_or_default();
-        let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
+        let ConnectionSettings {
+            name,
+            db,
+            host,
+            port,
+            user,
+            pw,
+        } = setting;
+        if let Some(pw) = pw {
+            let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
 
-        let settings = self.settings.read().await;
-        match settings.get(name) {
-            Some(s) => {
-                error!("connection already exists {}", name);
-                return Err(anyhow::anyhow!("connection already exists {}", name));
-            }
-            None => {
-                let mut settings = self.settings.write().await;
-                settings.insert(
-                    name.clone(),
-                    ConnectionSettings {
-                        name: name.clone(),
-                        db: db.clone(),
-                        host: host.clone(),
-                        port,
-                        user: user.clone(),
-                        pw: Some(pw.clone()),
-                    },
-                );
+            let settings = self.settings.read().await;
+            match settings.get(name) {
+                Some(s) => {
+                    error!("connection already exists {}", name);
+                    return Err(anyhow::anyhow!("connection already exists {}", name));
+                }
+                None => {
+                    let mut settings = self.settings.write().await;
+                    settings.insert(
+                        name.clone(),
+                        // ConnectionSettings {
+                        //     name: name.clone(),
+                        //     db: db.clone(),
+                        //     host: host.clone(),
+                        //     port,
+                        //     user: user.clone(),
+                        //     pw: Some(pw.clone()),
+                        // },
+                        setting.clone(),
+                    );
 
-                return Ok(());
+                    return Ok(());
+                }
             }
+        } else {
+            return Err(anyhow::anyhow!("Password is not set"));
         }
     }
 
     pub async fn get_pool(&self, name: &str) -> anyhow::Result<sqlx::Pool<sqlx::Postgres>> {
-        let settings = self.settings.read().await;
-        match settings.get(&name.to_string()) {
+        let pools = self.pools.read().await;
+        match pools.get(name) {
             None => {
-                error!("connection does not exist {}", name);
-                return Err(anyhow::anyhow!("connection does not exist {}", name));
-            }
-            Some(s) => {
-                if s.pw.is_none() {
-                    // pw is not set, ask from user
-                } else {
-                    let pools = self.pools.read().await;
-                    match pools.get(name) {
-                        None => {
-                            error!("pool does not exist {}", name);
-                            return Err(anyhow::anyhow!("pool does not exist {}", name));
-                        }
-                        Some(p) => {
-                            return Ok(p.clone());
+                // pool does not exist, try to create it
+                let settings = self.settings.read().await;
+                match settings.get(&name.to_string()) {
+                    None => {
+                        error!("connection settings do not exist {}", name);
+                        return Err(anyhow::anyhow!("connection does not exist {}", name));
+                    }
+                    Some(s) => {
+                        let ConnectionSettings {
+                            name,
+                            db,
+                            host,
+                            port,
+                            user,
+                            pw,
+                        } = s;
+                        if let Some(pw) = pw {
+                            let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
+                            match sqlx::Pool::connect(&uri).await {
+                                Err(e) => {
+                                    error!("unable to create pool for {}: {}", name, e);
+                                    return Err(anyhow::anyhow!(
+                                        "unable to create pool for {}",
+                                        name
+                                    ));
+                                }
+                                Ok(pool) => {
+                                    let mut pools = self.pools.write().await;
+                                    pools.insert(name.clone(), pool.clone());
+                                    return Ok(pool);
+                                }
+                            }
+                        } else {
+                            return Err(anyhow::anyhow!("Unable to create connection"));
                         }
                     }
                 }
-
-                return Err(anyhow::anyhow!("//todo"));
+            }
+            Some(pool) => {
+                return Ok(pool.clone());
             }
         }
-
-        // let pools = self.pools.read().await;
-        // pools.get(name).cloned()
     }
 }

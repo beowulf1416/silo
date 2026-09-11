@@ -8,7 +8,8 @@ use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 
 use crate::get_runtime;
-use crate::nodes::ConnectionSettings;
+// use crate::nodes::ConnectionSettings;
+use crate::db::ConnectionSettings;
 use crate::nodes::data_source_node::PostgresDataSourceNode;
 use silo_plugin::{ApplicationMessage, node::Node};
 
@@ -89,14 +90,14 @@ impl PostgresConnectionEditor {
                     let name_clone = name.clone();
 
                     let handle = get_runtime().spawn(async move {
-                        cm.add_connection(
-                            &name_clone,
-                            &db.clone(),
-                            &host.clone(),
+                        cm.add_connection(&ConnectionSettings {
+                            name: name_clone,
+                            db: db.clone(),
+                            host: host.clone(),
                             port,
-                            &user.clone(),
-                            Some(pw.clone()),
-                        )
+                            user: user.clone(),
+                            pw: Some(pw.clone()),
+                        })
                         .await
                     });
 

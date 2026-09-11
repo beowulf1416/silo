@@ -33,10 +33,9 @@ impl SchemaViewsNode {
             "
         select \
             table_name \
-        from information_schema.tables \
+        from information_schema.views \
         where \
-          table_type = 'BASE TABLE' \
-          and table_schema = $1",
+          table_schema = $1",
             args,
         );
         let query = builder.build();
@@ -63,12 +62,12 @@ impl Node for SchemaViewsNode {
                 error!("unable to fetch children async {}", e);
                 return Err(anyhow!(PostgresError::SchemaError));
             }
-            Ok(tables) => {
+            Ok(views) => {
                 // let schema_name = self.schema_name.clone();
                 let mut result: Vec<Arc<dyn Node>> = vec![];
-                for table in tables {
+                for view in views {
                     let boxed: Arc<dyn Node> =
-                        Arc::new(ViewNode::new(self.pool.clone(), &self.schema_name, &table));
+                        Arc::new(ViewNode::new(self.pool.clone(), &self.schema_name, &view));
                     result.push(boxed);
                 }
                 return Ok(Some(result));

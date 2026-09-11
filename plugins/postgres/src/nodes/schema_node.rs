@@ -6,10 +6,11 @@ use std::sync::Arc;
 
 use silo_plugin::node::{DataSourceNode, Node};
 
-use crate::nodes::ConnectionSettings;
+// use crate::nodes::ConnectionSettings;
 use crate::nodes::schema_functions_node::SchemaFunctionsNode;
 use crate::nodes::schema_procedures_node::SchemaProceduresNode;
 use crate::nodes::schema_tables_node::SchemaTablesNode;
+use crate::nodes::schema_views_node::SchemaViewsNode;
 
 #[derive(Debug, Clone)]
 pub struct SchemaNode {
@@ -33,32 +34,15 @@ impl Node for SchemaNode {
         return &self.name.as_str();
     }
 
-    // fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
-    //     debug!("SchemaNode::children");
-
-    //     let mut nodes: Vec<Arc<dyn Node>> = vec![];
-
-    //     let boxed: Arc<dyn Node> = Arc::new(SchemaTablesNode::new(
-    //         &self.name,
-    //         // Arc::clone(&self.settings),
-    //     ));
-    //     nodes.push(boxed);
-
-    //     let boxed: Arc<dyn Node> = Arc::new(SchemaProceduresNode::new(Arc::clone(&self.settings)));
-    //     nodes.push(boxed);
-
-    //     let boxed: Arc<dyn Node> = Arc::new(SchemaFunctionsNode::new(Arc::clone(&self.settings)));
-    //     nodes.push(boxed);
-
-    //     return Some(nodes);
-    // }
-
     async fn children_async(&self) -> anyhow::Result<Option<Vec<Arc<dyn Node>>>> {
         // return Err(anyhow::anyhow!("//todo not implemented"));
 
         let mut nodes: Vec<Arc<dyn Node>> = vec![];
 
         let boxed: Arc<dyn Node> = Arc::new(SchemaTablesNode::new(self.pool.clone(), &self.name));
+        nodes.push(boxed);
+
+        let boxed: Arc<dyn Node> = Arc::new(SchemaViewsNode::new(self.pool.clone(), &self.name));
         nodes.push(boxed);
 
         let boxed: Arc<dyn Node> =
