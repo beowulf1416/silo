@@ -37,8 +37,7 @@ pub struct MainWindow {
     pub(super) dsv: RefCell<Option<DataSourcesView>>,
     pub(super) ev: EditorView,
 
-    pub(super) app: RefCell<Option<App>>,
-
+    // pub(super) app: RefCell<Option<App>>,
     pub(super) data_sources_model: DataSources,
     pub(super) data_sources: RefCell<Option<gio::ListStore>>,
 
@@ -301,6 +300,16 @@ impl MainWindow {
         menu.append_section(None, &section);
 
         return menu;
+    }
+}
+
+impl AppWindow for MainWindow {
+    fn show_password_dialog(&self) -> anyhow::Result<String> {
+        let aw = AuthWindow::new();
+        aw.set_transient_for(Some(&self));
+        aw.present();
+
+        return Err(anyhow::anyhow!("//todo"));
     }
 }
 
