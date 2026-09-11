@@ -2,6 +2,9 @@ use tracing::info;
 
 use gtk::{glib, prelude::*};
 
+use std::env;
+use std::path::Path;
+
 fn main() -> glib::ExitCode {
     tracing_subscriber::fmt::init();
 
