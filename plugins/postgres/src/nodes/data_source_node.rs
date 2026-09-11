@@ -26,6 +26,8 @@ use crate::nodes::schema_node::SchemaNode;
 use crate::{PostgresError, nodes::ConnectionSettings};
 use silo_plugin::node::{DataSourceNode, Node, QueryColumn, QueryResult};
 
+static SQL_FETCH_SCHEMAS: &str = "select schema_name from information_schema.schemata";
+
 #[derive(Debug, Clone)]
 pub struct PostgresDataSourceNode {
     name: String,
@@ -49,7 +51,7 @@ impl PostgresDataSourceNode {
         debug!("fetch_schemas_async");
 
         let pool = self.pool.clone();
-        let sql = "select schema_name from information_schema.schemata";
+        let sql = SQL_FETCH_SCHEMAS;
 
         let handle = get_runtime().spawn(async move {
             return sqlx::query(sql).fetch_all(&pool).await;

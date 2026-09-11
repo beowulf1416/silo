@@ -90,40 +90,58 @@ impl PostgresConnectionEditor {
                     let name_clone = name.clone();
 
                     let handle = get_runtime().spawn(async move {
-                        cm.add_connection(&ConnectionSettings {
-                            name: name_clone,
-                            db: db.clone(),
-                            host: host.clone(),
-                            port,
-                            user: user.clone(),
-                            pw: Some(pw.clone()),
-                        })
-                        .await
+                        match cm
+                            .add_connection(&ConnectionSettings {
+                                name: name.clone(),
+                                db: db.clone(),
+                                host: host.clone(),
+                                port,
+                                user: user.clone(),
+                                pw: Some(pw.clone()),
+                            })
+                            .await
+                        {
+                            Err(e) => {
+                                error!("unable to add connection: {}", e);
+                                Err(anyhow::anyhow!("unable to add connection: {}", e))
+                            }
+                            Ok(_) => match cm.get_pool(&name).await {
+                                Err(e) => {
+                                    error!("pool not found: {} {}", name, e);
+                                    Err(anyhow::anyhow!("pool not found: {}", name))
+                                }
+                                Ok(pool) => Ok(pool),
+                            },
+                        }
                     });
 
                     match handle.await {
                         Err(e) => {
                             error!("unable to add connection: {}", e);
                         }
-                        Ok(result) => match result {
-                            Err(e) => {
-                                error!("unable to add connection: {}", e);
-                            }
-                            Ok(pool) => {
-                                let boxed: Arc<dyn Node> = Arc::new(PostgresDataSourceNode::new(
-                                    &name.clone().as_str(),
-                                    &pool,
-                                ));
+                        Ok(result) => {
+                            debug!("result: {:?}", result);
 
-                                let _ = window
-                                    .sender
-                                    .borrow()
-                                    .as_ref()
-                                    .expect("//todo sender")
-                                    .send(ApplicationMessage::DataSourceAdd(boxed))
-                                    .await;
+                            match result {
+                                Err(e) => {
+                                    error!("unable to add connection: {}", e);
+                                }
+                                Ok(pool) => {
+                                    let boxed: Arc<dyn Node> =
+                                        Arc::new(PostgresDataSourceNode::new(
+                                            &name_clone.clone().as_str(),
+                                            &pool,
+                                        ));
+                                    let _ = window
+                                        .sender
+                                        .borrow()
+                                        .as_ref()
+                                        .expect("//todo sender")
+                                        .send(ApplicationMessage::DataSourceAdd(boxed))
+                                        .await;
+                                }
                             }
-                        },
+                        }
                     }
                 });
             }
