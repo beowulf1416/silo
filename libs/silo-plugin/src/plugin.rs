@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ApplicationMessage;
+use crate::{ApplicationMessage, app_window};
 // use sqlx::Pool;
 
 pub trait Plugin: std::fmt::Debug {
@@ -10,16 +10,10 @@ pub trait Plugin: std::fmt::Debug {
         &self,
         sender: async_channel::Sender<ApplicationMessage>,
     ) -> Option<gtk::Widget>;
-    // fn build_query_editor_widget(
-    //     &self,
-    //     sender: async_channel::Sender<ApplicationMessage>,
-    // ) -> Option<gtk::Widget>;
-    //
-
-    // fn get_pool(&self) -> Result<sqlx::Pool, &'static str>;
 }
 
-pub type PluginFactory = fn() -> Box<dyn Plugin>;
+/*
+pub type PluginFactory = fn(dyn app_window::AppWindow) -> Box<dyn Plugin>;
 
 #[derive(Debug, Clone)]
 pub struct PluginRegistry {
@@ -55,3 +49,4 @@ impl Default for PluginRegistry {
         return Self::new();
     }
 }
+*/
