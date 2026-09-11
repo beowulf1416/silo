@@ -217,10 +217,7 @@ impl MainWindow {
             ApplicationMessage::DataSourceAdd(box_node) => {
                 debug!("DataSourceAdd {:?}", box_node);
 
-                // let imp = self.imp();
-                // // imp.dsv.data_source_add(box_node);
-                // imp.data_source_add(box_node);
-                self.data_source_add(box_node);
+                let _ = self.data_source_add(box_node);
             }
             ApplicationMessage::NewQueryEditorRequested(_plugin_name) => {
                 let imp = self.imp();
