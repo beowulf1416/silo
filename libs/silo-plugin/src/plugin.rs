@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-
 use crate::{ApplicationMessage, app_window};
+use std::collections::HashMap;
+use std::sync::Arc;
 // use sqlx::Pool;
 
 pub trait Plugin: std::fmt::Debug {
@@ -12,8 +12,7 @@ pub trait Plugin: std::fmt::Debug {
     ) -> Option<gtk::Widget>;
 }
 
-/*
-pub type PluginFactory = fn(dyn app_window::AppWindow) -> Box<dyn Plugin>;
+pub type PluginFactory = fn(Arc<dyn app_window::AppWindow>) -> Arc<dyn Plugin>;
 
 #[derive(Debug, Clone)]
 pub struct PluginRegistry {
@@ -35,12 +34,16 @@ impl PluginRegistry {
         return self.plugins.keys().cloned().collect::<Vec<String>>();
     }
 
-    pub fn create_plugin(&self, name: &str) -> Option<Box<dyn Plugin>> {
+    pub fn create_plugin(
+        &self,
+        name: &str,
+        app: Arc<dyn app_window::AppWindow>,
+    ) -> Option<Arc<dyn Plugin>> {
         let factory = self
             .plugins
             .get(name)
             .expect("//todo should return a factory");
-        return Some(factory());
+        return Some(factory(app));
     }
 }
 
@@ -49,4 +52,3 @@ impl Default for PluginRegistry {
         return Self::new();
     }
 }
-*/
