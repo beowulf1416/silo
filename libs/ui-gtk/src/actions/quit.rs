@@ -11,7 +11,7 @@ pub fn quit_action(window: &MainWindow) -> gio::SimpleAction {
     action.connect_activate(glib::clone!(
         #[weak]
         window,
-        move |a, b| {
+        move |_action, _target| {
             debug!("quit action activated");
             window.send(ApplicationMessage::CloseRequested);
         }

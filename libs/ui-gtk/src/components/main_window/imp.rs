@@ -14,13 +14,14 @@ use gtk::{
 };
 
 // use silo_plugin::node::Node;
+use silo_plugin::app_window::AppWindow;
 use silo_plugin::{ApplicationMessage, StatusMessage};
 
 use crate::{
-    APP_TITLE,
+    // APP_TITLE,
     app::App,
+    components::auth_window::AuthWindow, // plugins::PluginRegistry,
     components::data_sources_view::DataSourcesView,
-    // plugins::PluginRegistry,
 };
 use crate::{
     components::{editor_view::EditorView, header::Header},
@@ -29,6 +30,8 @@ use crate::{
 
 #[derive(Debug, Default)]
 pub struct MainWindow {
+    pub(super) app: RefCell<Option<App>>,
+
     pub sender: RefCell<Option<async_channel::Sender<ApplicationMessage>>>,
     pub sender_status: RefCell<Option<async_channel::Sender<StatusMessage>>>,
 
@@ -37,7 +40,6 @@ pub struct MainWindow {
     pub(super) dsv: RefCell<Option<DataSourcesView>>,
     pub(super) ev: EditorView,
 
-    // pub(super) app: RefCell<Option<App>>,
     pub(super) data_sources_model: DataSources,
     pub(super) data_sources: RefCell<Option<gio::ListStore>>,
 
@@ -303,15 +305,23 @@ impl MainWindow {
     }
 }
 
-impl AppWindow for MainWindow {
-    fn show_password_dialog(&self) -> anyhow::Result<String> {
-        let aw = AuthWindow::new();
-        aw.set_transient_for(Some(&self));
-        aw.present();
+// impl AppWindow for MainWindow {
+//     fn show_password_dialog(&self) -> anyhow::Result<String> {
+//         let obj = self.obj();
+//         if let Some(parent_window) = obj
+//             .transient_for()
+//             .and_then(|w| w.downcast::<gtk::Window>().ok())
+//         {
+//             let aw = AuthWindow::new();
+//             aw.set_transient_for(Some(&parent_window));
+//             aw.present();
 
-        return Err(anyhow::anyhow!("//todo"));
-    }
-}
+//             return Ok(String::from("//todo"));
+//         }
+
+//         return Err(anyhow::anyhow!("//todo"));
+//     }
+// }
 
 #[glib::object_subclass]
 impl ObjectSubclass for MainWindow {

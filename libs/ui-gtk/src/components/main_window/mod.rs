@@ -1,8 +1,6 @@
 mod imp;
 
 use async_channel::Receiver;
-use gio::prelude::ActionGroupExt;
-use gtk::glib::bitflags::serde;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use tracing::{debug, error, warn};
 
@@ -11,9 +9,11 @@ use std::cell::Ref;
 use std::sync::Arc;
 
 use crate::App;
+use crate::components::auth_window::AuthWindow;
 use crate::components::editor_view::EditorView;
 use crate::model::data_source::DataSource;
 
+use silo_plugin::app_window::AppWindow;
 use silo_plugin::node::{DataSourceNode, Node};
 use silo_plugin::{ApplicationMessage, StatusMessage};
 
@@ -195,7 +195,15 @@ impl MainWindow {
                     plugin_name
                 );
 
-                if let Some(plugin) = self.app().registry().create_plugin(&plugin_name) {
+                // let imp = self.imp();
+                // let obj = imp.obj();
+                let window = self.clone();
+
+                if let Some(plugin) = self
+                    .app()
+                    .registry()
+                    .create_plugin(&plugin_name, Arc::new(window))
+                {
                     debug!("plugin {:?}", plugin);
 
                     if let Some(widget) =
@@ -293,5 +301,27 @@ impl MainWindow {
         }
 
         return Ok(());
+    }
+}
+
+impl AppWindow for MainWindow {
+    fn show_password_dialog(&self) -> anyhow::Result<String> {
+        // let obj = self.obj();
+        // if let Some(parent_window) = obj
+        //     .transient_for()
+        //     .and_then(|w| w.downcast::<gtk::Window>().ok())
+        // {
+        //
+
+        let window = self.clone().upcast::<gtk::Window>();
+
+        let aw = AuthWindow::new();
+        aw.set_transient_for(Some(&window));
+        aw.present();
+
+        return Ok(String::from("//todo"));
+        // }
+
+        // return Err(anyhow::anyhow!("//todo"));
     }
 }
