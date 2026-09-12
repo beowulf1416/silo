@@ -1,6 +1,9 @@
+use std::sync::Arc;
+
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 use silo_plugin::ApplicationMessage;
+use silo_plugin::app_window::AppWindow;
 use silo_plugin::plugin::Plugin;
 
 use crate::components::{
@@ -8,17 +11,23 @@ use crate::components::{
     // query_editor::PostgresQueryEditor,
 };
 
-pub fn factory() -> Box<dyn Plugin> {
-    let boxed: Box<dyn Plugin> = Box::new(PostgresPlugin::new());
+pub fn factory(window: Arc<dyn AppWindow>) -> Arc<dyn Plugin> {
+    let boxed: Arc<dyn Plugin> = Arc::new(PostgresPlugin::new(window));
     return boxed;
 }
 
 #[derive(Debug)]
-pub struct PostgresPlugin {}
+pub struct PostgresPlugin {
+    app: Arc<dyn AppWindow>,
+}
 
 impl PostgresPlugin {
-    pub fn new() -> Self {
-        return Self {};
+    pub fn new(app: Arc<dyn AppWindow>) -> Self {
+        return Self { app };
+    }
+
+    pub fn app(&self) -> &dyn AppWindow {
+        return &*self.app;
     }
 }
 
