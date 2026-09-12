@@ -1,4 +1,3 @@
-use silo_plugin::Plugin;
 use tracing::{debug, error};
 
 use std::collections::HashMap;
@@ -9,6 +8,7 @@ use std::{fs::File, hash::Hash};
 use serde::{Deserialize, Serialize};
 
 use crate::connection::Connection;
+use silo_plugin::plugin::{Plugin, PluginRegistry};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Silo {
@@ -16,17 +16,31 @@ pub struct Silo {
     connections: Vec<Connection>,
 
     #[serde(skip_serializing, skip_deserializing)]
-    plugins: HashMap<String, Box<dyn Plugin>>,
+    plugins: PluginRegistry,
 }
 
 impl Silo {
-    pub fn new() -> Self {
+    pub fn new(workspace_path: Option<String>) -> Self {
         // register plugins
+        debug!("silo::new()");
+
+        let path = if workspace_path.is_none() {
+            if let Ok(cd) = std::env::current_dir() {
+                cd.to_string_lossy().to_string()
+            } else {
+                "".to_string()
+            }
+        } else {
+            workspace_path.unwrap()
+        };
+
+        let plugins = PluginRegistry::new();
+        // plugins.register("postgres", factory);
 
         return Self {
-            workspace_path: String::from(""),
+            workspace_path: path,
             connections: Vec::new(),
-            plugins: HashMap::new(),
+            plugins: plugins,
         };
     }
 
@@ -53,5 +67,11 @@ impl Silo {
         }
 
         return Ok(());
+    }
+}
+
+impl Default for Silo {
+    fn default() -> Self {
+        return Silo::new(None);
     }
 }
