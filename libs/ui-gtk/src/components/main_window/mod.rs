@@ -195,32 +195,7 @@ impl MainWindow {
                     plugin_name
                 );
 
-                // let imp = self.imp();
-                // let obj = imp.obj();
-                let window = self.clone();
-
-                if let Some(plugin) = self
-                    .app()
-                    .registry()
-                    .create_plugin(&plugin_name, Arc::new(window))
-                {
-                    debug!("plugin {:?}", plugin);
-
-                    if let Some(widget) =
-                        plugin.build_data_source_editor_widget(self.imp().sender())
-                    {
-                        let imp = self.imp();
-                        imp.ev.add_editor(
-                            &plugin_name,
-                            widget,
-                            self.imp().sender.borrow().as_ref().unwrap(),
-                        );
-                    } else {
-                        warn!("plugin {} does not have a data source editor", plugin_name);
-                    }
-                } else {
-                    error!("unable to find plugin {}", plugin_name);
-                }
+                self.new_data_source_requested(&plugin_name);
             }
             ApplicationMessage::DataSourceAdd(box_node) => {
                 debug!("DataSourceAdd {:?}", box_node);
@@ -301,6 +276,31 @@ impl MainWindow {
         }
 
         return Ok(());
+    }
+
+    fn new_data_source_requested(&self, plugin_name: &str) {
+        let window = self.clone();
+
+        if let Some(plugin) = self
+            .app()
+            .registry()
+            .create_plugin(&plugin_name, Arc::new(window))
+        {
+            debug!("plugin {:?}", plugin);
+
+            if let Some(widget) = plugin.build_data_source_editor_widget(self.imp().sender()) {
+                let imp = self.imp();
+                imp.ev.add_editor(
+                    &plugin_name,
+                    widget,
+                    self.imp().sender.borrow().as_ref().unwrap(),
+                );
+            } else {
+                warn!("plugin {} does not have a data source editor", plugin_name);
+            }
+        } else {
+            error!("unable to find plugin {}", plugin_name);
+        }
     }
 }
 
