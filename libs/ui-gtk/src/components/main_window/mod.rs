@@ -2,7 +2,7 @@ mod imp;
 
 use async_channel::Receiver;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
-use tracing::{debug, error, warn};
+use tracing::{debug, error, info, warn};
 
 use serde_json::Value;
 use std::cell::Ref;
@@ -72,6 +72,7 @@ impl MainWindow {
     }
 
     pub fn data_source_add(&self, dsn: Arc<dyn Node>) -> anyhow::Result<()> {
+        info!("data source add: {}", dsn.name());
         let imp = self.imp();
         match imp.data_sources_model.sources.write() {
             Err(e) => {
@@ -84,9 +85,9 @@ impl MainWindow {
             Ok(mut sources) => {
                 let key = dsn.name().to_string();
                 match sources.get(&key) {
-                    Some(s) => {
+                    Some(_s) => {
                         // source exists, throw error
-                        return Err(anyhow::anyhow!("dat source already exists"));
+                        return Err(anyhow::anyhow!("data source already exists"));
                     }
                     None => {
                         sources.insert(
@@ -279,8 +280,9 @@ impl MainWindow {
     }
 
     fn new_data_source_requested(&self, plugin_name: &str) {
-        let window = self.clone();
+        info!("new data source requested: {}", plugin_name);
 
+        let window = self.clone();
         if let Some(plugin) = self
             .app()
             .registry()

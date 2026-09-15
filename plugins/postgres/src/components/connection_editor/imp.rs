@@ -90,28 +90,34 @@ impl PostgresConnectionEditor {
                     let name_clone = name.clone();
 
                     let handle = get_runtime().spawn(async move {
-                        match cm
-                            .add_connection(&ConnectionSettings {
+                        let duration = std::time::Duration::from_secs(5);
+                        match tokio::time::timeout(
+                            duration,
+                            cm.add_connection(&ConnectionSettings {
                                 name: name.clone(),
                                 db: db.clone(),
                                 host: host.clone(),
                                 port,
                                 user: user.clone(),
                                 pw: Some(pw.clone()),
-                            })
-                            .await
+                            }),
+                        )
+                        .await
                         {
                             Err(e) => {
                                 error!("unable to add connection: {}", e);
                                 Err(anyhow::anyhow!("unable to add connection: {}", e))
                             }
-                            Ok(_) => match cm.get_pool(&name).await {
-                                Err(e) => {
-                                    error!("pool not found: {} {}", name, e);
-                                    Err(anyhow::anyhow!("pool not found: {}", name))
+                            Ok(_) => {
+                                debug!("pool created");
+                                match cm.get_pool(&name).await {
+                                    Err(e) => {
+                                        error!("pool not found: {} {}", name, e);
+                                        Err(anyhow::anyhow!("pool not found: {}", name))
+                                    }
+                                    Ok(pool) => Ok(pool),
                                 }
-                                Ok(pool) => Ok(pool),
-                            },
+                            }
                         }
                     });
 
@@ -127,6 +133,8 @@ impl PostgresConnectionEditor {
                                     error!("unable to add connection: {}", e);
                                 }
                                 Ok(pool) => {
+                                    debug!("pool: {:?}", pool);
+
                                     let boxed: Arc<dyn Node> =
                                         Arc::new(PostgresDataSourceNode::new(
                                             &name_clone.clone().as_str(),

@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::sync::Arc;
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 use tokio::runtime::{Builder, Runtime};
 use tokio::sync::{OnceCell, RwLock};
@@ -40,16 +40,9 @@ pub async fn get_connection_manager() -> &'static ConnectionManager {
 }
 
 impl ConnectionManager {
-    pub async fn add_connection(
-        &self,
-        // name: &String,
-        // db: &String,
-        // host: &String,
-        // port: u16,
-        // user: &String,
-        // pw: Option<String>,
-        setting: &ConnectionSettings,
-    ) -> anyhow::Result<()> {
+    pub async fn add_connection(&self, setting: &ConnectionSettings) -> anyhow::Result<()> {
+        info!("add_connection");
+
         let ConnectionSettings {
             name,
             db,
@@ -63,24 +56,15 @@ impl ConnectionManager {
 
             let settings = self.settings.read().await;
             match settings.get(name) {
-                Some(s) => {
+                Some(_s) => {
                     error!("connection already exists {}", name);
                     return Err(anyhow::anyhow!("connection already exists {}", name));
                 }
                 None => {
+                    // drop read lock and obtain write lock
+                    drop(settings);
                     let mut settings = self.settings.write().await;
-                    settings.insert(
-                        name.clone(),
-                        // ConnectionSettings {
-                        //     name: name.clone(),
-                        //     db: db.clone(),
-                        //     host: host.clone(),
-                        //     port,
-                        //     user: user.clone(),
-                        //     pw: Some(pw.clone()),
-                        // },
-                        setting.clone(),
-                    );
+                    settings.insert(name.clone(), setting.clone());
 
                     return Ok(());
                 }
@@ -102,6 +86,7 @@ impl ConnectionManager {
                         return Err(anyhow::anyhow!("connection does not exist {}", name));
                     }
                     Some(s) => {
+                        debug!("creating pool for {}", name);
                         let ConnectionSettings {
                             name,
                             db,
@@ -112,6 +97,7 @@ impl ConnectionManager {
                         } = s;
                         if let Some(pw) = pw {
                             let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
+                            debug!("creating pool for {} (2)", name);
                             match sqlx::Pool::connect(&uri).await {
                                 Err(e) => {
                                     error!("unable to create pool for {}: {}", name, e);
@@ -121,6 +107,7 @@ impl ConnectionManager {
                                     ));
                                 }
                                 Ok(pool) => {
+                                    drop(pools);
                                     let mut pools = self.pools.write().await;
                                     pools.insert(name.clone(), pool.clone());
                                     return Ok(pool);
