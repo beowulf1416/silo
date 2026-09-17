@@ -9,6 +9,7 @@ use silo_plugin::node::{DataSourceNode, Node};
 // use crate::nodes::ConnectionSettings;
 use crate::nodes::schema_functions_node::SchemaFunctionsNode;
 use crate::nodes::schema_procedures_node::SchemaProceduresNode;
+use crate::nodes::schema_sequences_node::SchemaSequencesNode;
 use crate::nodes::schema_tables_node::SchemaTablesNode;
 use crate::nodes::schema_views_node::SchemaViewsNode;
 
@@ -51,6 +52,10 @@ impl Node for SchemaNode {
 
         let boxed: Arc<dyn Node> =
             Arc::new(SchemaFunctionsNode::new(self.pool.clone(), &self.name));
+        nodes.push(boxed);
+
+        let boxed: Arc<dyn Node> =
+            Arc::new(SchemaSequencesNode::new(self.pool.clone(), &self.name));
         nodes.push(boxed);
 
         return Ok(Some(nodes));

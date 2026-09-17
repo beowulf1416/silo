@@ -4,8 +4,10 @@ pub mod procedure_node;
 pub mod schema_functions_node;
 pub mod schema_node;
 pub mod schema_procedures_node;
+pub mod schema_sequences_node;
 pub mod schema_tables_node;
 pub mod schema_views_node;
+pub mod sequence_node;
 pub mod table_node;
 pub mod view_node;
 

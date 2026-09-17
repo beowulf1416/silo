@@ -53,6 +53,7 @@ impl ConnectionManager {
         } = setting;
         if let Some(pw) = pw {
             let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
+            debug!("uri: {}", uri);
 
             let settings = self.settings.read().await;
             match settings.get(name) {
@@ -97,7 +98,7 @@ impl ConnectionManager {
                         } = s;
                         if let Some(pw) = pw {
                             let uri = format!("postgres://{user}:{pw}@{host}:{port}/{db}");
-                            debug!("creating pool for {} (2)", name);
+                            debug!("creating pool for {} {} (2)", name, uri);
                             match sqlx::Pool::connect(&uri).await {
                                 Err(e) => {
                                     error!("unable to create pool for {}: {}", name, e);
