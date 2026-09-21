@@ -8,9 +8,19 @@ log = "*"
 tracing = "*"
 tracing-subscriber = "*"
 
-gtk = { version = "*", package = "gtk4", features = ["v4_6"] }
+anyhow = "*"
+thiserror = "*"
+
+gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
+adw = { version = "*", package = "libadwaita", features = ["v1_7"] }
 
 # projects
+silo-api = { path = "../silo-api" }
 silo-base = { path = "../libs/silo-base" }
 #ui-relm = { path = "../libs/ui-relm" }
 ui-gtk = { path = "../libs/ui-gtk" }
+
+
+[build-dependencies]
+gio = "*"
+glib-build-tools = "*"
