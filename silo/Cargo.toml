@@ -8,6 +8,9 @@ log = "*"
 tracing = "*"
 tracing-subscriber = "*"
 
+serde = "*"
+serde_json = "*"
+
 anyhow = "*"
 thiserror = "*"
 
@@ -16,6 +19,7 @@ gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
 adw = { version = "*", package = "libadwaita", features = ["v1_7"] }
 
 async-channel = "*"
+directories = "*"
 
 # projects
 silo-api = { path = "../silo-api" }

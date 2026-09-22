@@ -17,7 +17,7 @@ impl ObjectImpl for StatusBarImpl {
 
         let obj = self.obj();
         obj.set_vexpand(true);
-        obj.set_hexpand(true);
+        obj.set_hexpand(false);
     }
 }
 
