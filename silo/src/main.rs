@@ -13,6 +13,9 @@ fn main() -> glib::ExitCode {
 
     info!("Starting silo...");
 
-    let app = ui_gtk::App::new();
+    // let app = ui_gtk::App::new();
+    // return app.run();
+
+    let app = app::App::new();
     return app.run();
 }

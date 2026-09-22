@@ -11,8 +11,11 @@ tracing-subscriber = "*"
 anyhow = "*"
 thiserror = "*"
 
+tokio = { version = "*", features = ["full"] }
 gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
 adw = { version = "*", package = "libadwaita", features = ["v1_7"] }
+
+async-channel = "*"
 
 # projects
 silo-api = { path = "../silo-api" }

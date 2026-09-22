@@ -13,6 +13,12 @@ glib::wrapper! {
 }
 
 impl MainWindow {
+    pub fn new(app: &App) -> Self {
+        let window: Self = glib::Object::builder().property("application", app).build();
+
+        return window;
+    }
+
     pub fn app(&self) -> Option<App> {
         return self.application().and_downcast_ref::<App>().cloned();
     }

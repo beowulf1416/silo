@@ -1,4 +1,6 @@
-use gtk::{glib, subclass::prelude::*};
+use gtk::{glib, prelude::*, subclass::prelude::*};
+
+use crate::components::main_window;
 
 #[derive(Debug, Default)]
 pub struct AppImpl {}
@@ -12,7 +14,16 @@ impl ObjectSubclass for AppImpl {
 
 impl ObjectImpl for AppImpl {}
 
-impl ApplicationImpl for AppImpl {}
+impl ApplicationImpl for AppImpl {
+    fn activate(&self) {
+        self.parent_activate();
+
+        let obj = self.obj();
+
+        let window = main_window::MainWindow::new(&obj);
+        window.present();
+    }
+}
 
 impl GtkApplicationImpl for AppImpl {}
 
