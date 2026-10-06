@@ -3,6 +3,8 @@ use gtk::prelude::GtkWindowExt;
 use gtk::{gio, gio::prelude::*, glib, prelude::*, subclass::prelude::*};
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
+use std::collections::HashMap;
+
 use tracing::{debug, error};
 
 use super::MainWindowMessages;
@@ -19,6 +21,8 @@ struct ApplicationSettings {
 #[derive(Debug, Default)]
 pub struct MainWindowImpl {
     pub(super) sender: RefCell<Option<async_channel::Sender<MainWindowMessages>>>,
+
+    pub(super) sources: RefCell<Option<HashMap<String, serde_json::Value>>>,
 }
 
 #[glib::object_subclass]
@@ -122,7 +126,7 @@ impl MainWindowImpl {
 
             let settings = ApplicationSettings {
                 workspace_path: None,
-                window_maximized: None,
+                window_maximized: Some(obj.is_maximized()),
                 width: Some(width),
                 height: Some(height),
             };
@@ -149,6 +153,16 @@ impl MainWindowImpl {
                         settings.width.unwrap_or(800),
                         settings.height.unwrap_or(600),
                     );
+
+                    let sources_file = config_dir.join("sources.json");
+                    if let Ok(contents) = std::fs::read_to_string(&sources_file) {
+                        if let Ok(sources) =
+                            serde_json::from_str::<HashMap<String, serde_json::Value>>(&contents)
+                        {
+                            debug!("sources: {:?}", sources);
+                            self.sources.borrow_mut().replace(sources);
+                        }
+                    }
                 }
             }
         }

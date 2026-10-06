@@ -8,7 +8,7 @@ log = "*"
 tracing = "*"
 tracing-subscriber = "*"
 
-serde = "*"
+serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 
 anyhow = "*"
@@ -21,11 +21,16 @@ adw = { version = "*", package = "libadwaita", features = ["v1_7"] }
 async-channel = "*"
 directories = "*"
 
+libloading = "*"
+
 # projects
 silo-api = { path = "../silo-api" }
-silo-base = { path = "../libs/silo-base" }
+
+#silo-base = { path = "../libs/silo-base" }
 #ui-relm = { path = "../libs/ui-relm" }
-ui-gtk = { path = "../libs/ui-gtk" }
+#ui-gtk = { path = "../libs/ui-gtk" }
+
+postgres-plugin = { path = "../plugins/postgres-plugin" }
 
 
 [build-dependencies]

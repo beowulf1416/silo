@@ -1,11 +1,14 @@
 [workspace]
 members = [
-    "libs/silo-base",
-    "libs/silo-plugin",
-    "libs/ui-gtk",
+    #"libs/silo-base",
+    #"libs/silo-plugin",
+    #"libs/ui-gtk",
+    #"plugins/mysql-plugin",
+    #"plugins/postgres",
+    "plugins/postgres-plugin",
     "plugins/mysql-plugin",
-    "plugins/postgres",
-    "silo", "silo-api",
-    "silo-cli"
+    "silo",
+    "silo-api",
+    #"silo-cli",
 ]
 resolver = "3"

@@ -1,4 +1,5 @@
 mod imp;
+mod registry;
 
 use adw::prelude::*;
 use gtk::{gdk, gio, glib, prelude::*, subclass::prelude::*};
@@ -31,5 +32,9 @@ impl App {
             .build();
 
         return app;
+    }
+
+    pub fn set_workspace_path(&self, path: &str) {
+        self.imp().set_workspace_path(path);
     }
 }
