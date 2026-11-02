@@ -1,0 +1,16 @@
+[package]
+name = "silo-api"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+log = "*"
+tracing = "*"
+
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"
+
+async-trait = "*"
+
+anyhow = "*"
+thiserror = "*"

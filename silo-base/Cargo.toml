@@ -1,0 +1,16 @@
+[package]
+name = "silo-base"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tracing = "*"
+thiserror = "*"
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"
+async-trait = "*"
+
+# projects
+silo-api = { path = "../silo-api" }
+
+postgres_plugin = { path = "../plugins/postgres_plugin" }

@@ -1,0 +1,28 @@
+[package]
+name = "silo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+log = "*"
+tracing = "*"
+tracing-subscriber = "*"
+envy = "*"
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"
+directories = "*"
+tokio = { version = "*", features = ["full"] }
+async-trait = "*"
+
+gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
+adw = { version = "*", package = "libadwaita", features = ["v1_7"] }
+async-channel = "*"
+
+# projects
+silo-api = { path = "../silo-api" }
+silo-base = { path = "../silo-base" }
+
+
+[build-dependencies]
+gio = "*"
+glib-build-tools = "*"

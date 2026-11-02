@@ -1,0 +1,8 @@
+[workspace]
+resolver = "3"
+members = ["plugins/postgres_plugin",
+    "silo",
+    "silo-api",
+    "silo-base",
+    "plugins/postgres_plugin"
+]

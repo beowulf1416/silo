@@ -1,0 +1,14 @@
+[package]
+name = "postgres_plugin"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tracing = "*"
+async-trait = "*"
+
+sqlx = { version = "*", features = ["postgres", "uuid", "chrono", "macros", "runtime-tokio", "tls-rustls"] }
+tokio = { version = "*", features = ["full"] }
+
+# projects
+silo-api = { path = "../../silo-api" }
