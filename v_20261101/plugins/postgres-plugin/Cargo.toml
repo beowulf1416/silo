@@ -1,0 +1,10 @@
+[package]
+name = "postgres-plugin"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tracing = "*"
+
+# projects
+silo-api = { path = "../../silo-api" }

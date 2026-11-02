@@ -1,0 +1,10 @@
+[package]
+name = "mysql-plugin"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+
+# projects
+silo-api = { path = "../../silo-api" }
