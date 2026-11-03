@@ -9,6 +9,7 @@ thiserror = "*"
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 async-trait = "*"
+async-channel = "*"
 
 # projects
 silo-api = { path = "../silo-api" }

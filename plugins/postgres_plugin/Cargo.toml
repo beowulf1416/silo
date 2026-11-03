@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 tracing = "*"
 async-trait = "*"
+async-channel = "*"
 
 sqlx = { version = "*", features = ["postgres", "uuid", "chrono", "macros", "runtime-tokio", "tls-rustls"] }
 tokio = { version = "*", features = ["full"] }

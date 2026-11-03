@@ -19,7 +19,7 @@ fn get_runtime() -> &'static Runtime {
 }
 
 use silo_api::{
-    Silo,
+    AppWindowMessages, Silo,
     data_sources::DataSource,
     node::{Node, NodeType},
 };
@@ -47,7 +47,7 @@ impl PostgresPlugin {
 
         if let Ok(opt_silo) = self.silo.read() {
             if let Some(silo) = opt_silo.as_ref() {
-                let (sender, receiver) = mpsc::channel::<PasswordDialogResult>();
+                let (sender, receiver) = async_channel::unbounded::<AppWindowMessages>();
                 let silo_clone = Arc::clone(silo);
 
                 // todo: how to ask for password?
@@ -57,7 +57,7 @@ impl PostgresPlugin {
                     result
                 );
 
-                match receiver.recv() {
+                match receiver.recv().await {
                     Err(e) => {
                         error!("PostgresPlugin::create_connection() error: {:?}", e);
                     }

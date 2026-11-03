@@ -1,21 +1,22 @@
 mod config;
 mod plugin_manager;
 
-use silo_api::data_sources;
 use silo_api::plugin::Plugin;
+// use silo_api::{AppWindowMessages, data_sources};
 use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::RwLock;
-use std::sync::mpsc::Sender;
+// use std::sync::mpsc::Sender;
+use async_channel::Sender;
 use thiserror::Error;
 use tracing::{debug, error, info};
 
 // use silo_api::connection::Connection;
 use silo_api::{
-    PasswordDialogResult, Silo, SiloError, data_sources::DataSource, plugin::PluginManager,
-    window::MainWindow,
+    AppWindowMessages, PasswordDialogResult, Silo, SiloError, data_sources::DataSource,
+    plugin::PluginManager, window::MainWindow,
 };
 
 use crate::config::DataSourceConfig;
@@ -36,6 +37,7 @@ pub struct SiloImpl {
     // pub connections: HashMap<String, Box<dyn Connection>>,
     pub plugin_mgr: Arc<dyn PluginManager>,
     // pub window: RwLock<Option<Arc<dyn MainWindow>>>,
+    pub sender: RwLock<Option<Sender<AppWindowMessages>>>,
 }
 
 impl SiloImpl {
@@ -53,6 +55,7 @@ impl SiloImpl {
             // connections: HashMap::new(),
             plugin_mgr: Arc::new(pm),
             // window: RwLock::new(None),
+            sender: RwLock::new(None),
         };
     }
 
@@ -140,6 +143,17 @@ impl Silo for SiloImpl {
         self.initialize_plugins();
     }
 
+    fn set_sender(&self, sender: Sender<AppWindowMessages>) {
+        info!("SiloImpl::set_sender()");
+
+        if let Ok(rw_sender) = self.sender.write() {
+            let mut self_sender = rw_sender;
+            *self_sender = Some(sender);
+        } else {
+            error!("SiloImpl::set_sender() unable to obtain write access to sender");
+        }
+    }
+
     //     fn set_window(&self, window: Arc<dyn MainWindow>) {
     //         info!("SiloImpl::set_window()");
     //
@@ -167,8 +181,19 @@ impl Silo for SiloImpl {
         return self.plugin_mgr.clone();
     }
 
-    fn show_password_dialog(&self, sender: Sender<PasswordDialogResult>) -> String {
+    fn show_password_dialog(&self, sender: Sender<AppWindowMessages>) -> String {
         info!("SiloImpl::show_password_dialog()");
+
+        if let Ok(rw_sender) = self.sender.read() {
+            let self_sender = rw_sender.clone();
+            if let Some(o_sender) = self_sender {
+                let _result = o_sender.send(AppWindowMessages::ShowPasswordDialog);
+            } else {
+                error!("SiloImpl::show_password_dialog() sender not set");
+            }
+        } else {
+            error!("SiloImpl::show_password_dialog() unable to obtain read access to sender");
+        }
 
         return String::from("");
     }
