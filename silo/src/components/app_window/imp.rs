@@ -1,4 +1,5 @@
 use adw::{prelude::*, subclass::prelude::*};
+use async_channel::Sender;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use std::borrow::Borrow;
 use std::cell::RefCell;
@@ -9,14 +10,14 @@ use crate::actions::setup_actions;
 use crate::components::data_explorer::DataExplorer;
 use crate::components::*;
 
-use silo_api::{Silo, window::MainWindow};
+use silo_api::{AppWindowMessages, Silo, window::MainWindow};
 
-use super::AppWindowMessages;
+// use super::AppWindowMessages;
 // use crate::app::App;
 
 #[derive(Debug, Default)]
 pub struct AppWindowImpl {
-    pub(super) sender: RefCell<Option<async_channel::Sender<AppWindowMessages>>>,
+    pub(super) sender: RefCell<Option<Sender<AppWindowMessages>>>,
     pub(super) silo: RefCell<Option<Arc<dyn Silo>>>,
     explorer: RefCell<Option<DataExplorer>>,
 }
@@ -36,7 +37,11 @@ impl AppWindowImpl {
 
     fn setup_channels(&self) {
         let (sender, receiver) = async_channel::unbounded::<AppWindowMessages>();
-        self.sender.replace(Some(sender));
+        self.sender.replace(Some(sender.clone()));
+
+        if let Some(mut silo) = self.silo.borrow_mut().as_ref() {
+            silo.set_sender(sender.clone());
+        }
 
         glib::MainContext::default().spawn_local(glib::clone!(
             #[weak(rename_to = window)]
@@ -59,6 +64,11 @@ impl AppWindowImpl {
             }
             AppWindowMessages::CloseRequested => {
                 info!("Close Requested");
+            }
+            AppWindowMessages::ShowPasswordDialog => {
+                info!("AppWindowImpl::process_message() AppWindowMessages::ShowPasswordDialog");
+
+                self.show_password_dialog();
             }
         }
     }
@@ -92,12 +102,13 @@ impl AppWindowImpl {
     pub fn show_password_dialog(&self) {
         info!("AppWindowImpl::show_password_dialog()");
 
-        //         let imp = self.imp();
+        // let imp = self.imp();
         //
-        //         let pd = password_dialog::PasswordDialog::new();
+        let pd = password_dialog::PasswordDialog::new();
         //         pd.set_parent(&imp);
         //         pd.set_transient_for(Some(&imp));
-        //         pd.present();
+        pd.set_modal(true);
+        pd.present();
     }
 }
 

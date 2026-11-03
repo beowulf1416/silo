@@ -3,8 +3,10 @@ mod imp;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use tracing::{error, info};
 
+use silo_api::AppWindowMessages;
+
 use crate::app::App;
-use crate::components::app_window::{AppWindow, AppWindowMessages};
+use crate::components::app_window::AppWindow;
 
 glib::wrapper! {
     pub struct PasswordDialog(ObjectSubclass<imp::PasswordDialogImpl>)

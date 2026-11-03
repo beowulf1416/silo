@@ -1,8 +1,10 @@
 use gtk::{gio, glib, prelude::*};
 use tracing::debug;
 
+use silo_api::AppWindowMessages;
+
 use crate::components::app_window::AppWindow;
-use crate::components::app_window::AppWindowMessages;
+// use crate::components::app_window::AppWindowMessages;
 
 pub fn quit_action(window: &AppWindow) -> gio::SimpleAction {
     let action = gio::SimpleAction::new("quit", None);

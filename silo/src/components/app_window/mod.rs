@@ -4,15 +4,16 @@ use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 use std::sync::Arc;
 use tracing::{error, info};
 
-use silo_api::{Silo, window::MainWindow};
+use silo_api::{AppWindowMessages, Silo, window::MainWindow};
 
 use crate::app::App;
 
-#[derive(Debug, Clone)]
-pub enum AppWindowMessages {
-    Close,
-    CloseRequested,
-}
+// #[derive(Debug, Clone)]
+// pub enum AppWindowMessages {
+//     Close,
+//     CloseRequested,
+//     ShowPasswordDialog,
+// }
 
 glib::wrapper! {
     pub struct AppWindow(ObjectSubclass<imp::AppWindowImpl>)

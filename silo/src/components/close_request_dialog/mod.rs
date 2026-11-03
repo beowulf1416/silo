@@ -2,8 +2,10 @@ mod imp;
 
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
+use silo_api::AppWindowMessages;
+
 use crate::app::App;
-use crate::components::app_window::AppWindowMessages;
+// use crate::components::app_window::AppWindowMessages;
 
 glib::wrapper! {
     pub struct CloseRequestDialog(ObjectSubclass<imp::CloseRequestDialogImpl>)

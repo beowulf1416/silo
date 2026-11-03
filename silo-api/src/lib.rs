@@ -5,13 +5,14 @@ pub mod plugin;
 pub mod window;
 
 use std::sync::Arc;
-use std::sync::mpsc::Sender;
+// use std::sync::mpsc::Sender;
+use async_channel::Sender;
 use thiserror::Error;
 
 // use crate::connection::ConnectionData;
 use crate::data_sources::DataSource;
 use crate::plugin::{Plugin, PluginManager};
-use crate::window::MainWindow;
+// use crate::window::MainWindow;
 
 #[derive(Error, Debug)]
 pub enum SiloError {
@@ -29,15 +30,23 @@ pub enum PasswordDialogResult {
     Cancel,
 }
 
+#[derive(Debug, Clone)]
+pub enum AppWindowMessages {
+    Close,
+    CloseRequested,
+    ShowPasswordDialog,
+}
+
 #[async_trait::async_trait]
 pub trait Silo: std::fmt::Debug + Send + Sync {
     fn initialize(&self);
     fn set_workspace_path(&self, path: &str);
+    fn set_sender(&self, sender: Sender<AppWindowMessages>);
     // fn set_window(&self, window: Arc<dyn MainWindow>);
     // fn get_connection_from_name(&self, name: &str) -> Result<Box<dyn Connection>, SiloError>;
     // fn connections(&self) -> Vec<ConnectionData>;
     fn sources(&self) -> Vec<DataSource>;
     fn plugin_manager(&self) -> Arc<dyn PluginManager>;
     // fn get_plugin(&self, plugin: &str) -> Arc<dyn Plugin>;
-    fn show_password_dialog(&self, sender: Sender<PasswordDialogResult>) -> String;
+    fn show_password_dialog(&self, sender: Sender<AppWindowMessages>) -> String;
 }
