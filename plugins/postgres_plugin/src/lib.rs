@@ -1,10 +1,12 @@
 mod node;
 
+use silo_api::PasswordDialogResult;
 use silo_api::plugin::Plugin;
 use sqlx::{Pool, postgres::PgPoolOptions};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
+use std::sync::mpsc;
 use tracing::{debug, error, info};
 
 use std::sync::OnceLock;
@@ -45,14 +47,36 @@ impl PostgresPlugin {
 
         if let Ok(opt_silo) = self.silo.read() {
             if let Some(silo) = opt_silo.as_ref() {
+                let (sender, receiver) = mpsc::channel::<PasswordDialogResult>();
                 let silo_clone = Arc::clone(silo);
-                let handle = get_runtime().spawn(async move {
-                    let result = silo_clone.show_password_dialog().await;
-                });
 
-                // if let Ok(pw) = silo.show_password_dialog().await {
-                // } else {
-                // }
+                // todo: how to ask for password?
+                let result = silo.show_password_dialog(sender);
+                debug!(
+                    "PostgresPlugin::create_connection() show_password_dialog result: {:?}",
+                    result
+                );
+
+                match receiver.recv() {
+                    Err(e) => {
+                        error!("PostgresPlugin::create_connection() error: {:?}", e);
+                    }
+                    Ok(result) => {
+                        debug!("PostgresPlugin::create_connection() result: {:?}", result);
+                    }
+                }
+            //                 let handle = get_runtime().spawn(async move {
+            //                     let result = silo_clone.show_password_dialog();
+            //                 });
+            //
+            //                 match handle.await {
+            //                     Err(e) => {
+            //                         error!("PostgresPlugin::create_connection() error: {:?}", e);
+            //                     }
+            //                     Ok(result) => {
+            //                         debug!("result: {:?}", result);
+            //                     }
+            //                 }
             } else {
                 error!("PostgresPlugin::create_connection(): Silo object is empty");
             }
@@ -104,11 +128,20 @@ impl Plugin for PostgresPlugin {
 
         // get connection
         if let Ok(cns) = self.connections.read() {
-            // if let Some(cn) = cns.get(dsn) {
-            //     todo!();
-            // } else {
-            //     // create connection
-            // }
+            if let Some(cn) = cns.get(&dsn) {
+                todo!();
+            } else {
+                // create connection
+                if let Ok(sources) = self.sources.read() {
+                    if let Some(source) = sources.get(&dsn) {
+                        self.create_connection(source);
+                    } else {
+                        error!("PostgresPlugin::get_child_nodes() unable to read data source");
+                    }
+                } else {
+                    error!("PostgresPlugin::get_child_nodes() unable to read sources");
+                }
+            }
         } else {
             error!("PostgresPlugin::get_child_nodes(): unable obtain connections");
         }

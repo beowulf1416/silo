@@ -6,6 +6,8 @@ use silo_api::{
     node::{Node, NodeType},
 };
 
+// use crate::components::app_window::AppWindow;
+
 #[derive(Debug)]
 pub struct NodeImpl {
     pub name: String,

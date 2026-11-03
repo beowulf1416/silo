@@ -17,9 +17,7 @@ use super::AppWindowMessages;
 #[derive(Debug, Default)]
 pub struct AppWindowImpl {
     pub(super) sender: RefCell<Option<async_channel::Sender<AppWindowMessages>>>,
-
     pub(super) silo: RefCell<Option<Arc<dyn Silo>>>,
-
     explorer: RefCell<Option<DataExplorer>>,
 }
 
@@ -94,11 +92,12 @@ impl AppWindowImpl {
     pub fn show_password_dialog(&self) {
         info!("AppWindowImpl::show_password_dialog()");
 
-        let imp = self.imp();
-
-        let pd = password_dialog::PasswordDialog::new(&imp);
-        pd.set_parent(&imp);
-        pd.present();
+        //         let imp = self.imp();
+        //
+        //         let pd = password_dialog::PasswordDialog::new();
+        //         pd.set_parent(&imp);
+        //         pd.set_transient_for(Some(&imp));
+        //         pd.present();
     }
 }
 
@@ -173,3 +172,9 @@ impl WidgetImpl for AppWindowImpl {}
 impl ApplicationWindowImpl for AppWindowImpl {}
 
 impl AdwApplicationWindowImpl for AppWindowImpl {}
+
+impl MainWindow for AppWindowImpl {
+    fn show_password_dialog(&self) {
+        info!("AppWindow::show_password_dialog()");
+    }
+}

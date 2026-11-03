@@ -8,12 +8,14 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::RwLock;
+use std::sync::mpsc::Sender;
 use thiserror::Error;
 use tracing::{debug, error, info};
 
 // use silo_api::connection::Connection;
 use silo_api::{
-    Silo, SiloError, data_sources::DataSource, plugin::PluginManager, window::MainWindow,
+    PasswordDialogResult, Silo, SiloError, data_sources::DataSource, plugin::PluginManager,
+    window::MainWindow,
 };
 
 use crate::config::DataSourceConfig;
@@ -33,7 +35,7 @@ pub struct SiloImpl {
     pub data_sources: RwLock<Vec<DataSource>>,
     // pub connections: HashMap<String, Box<dyn Connection>>,
     pub plugin_mgr: Arc<dyn PluginManager>,
-    pub window: RwLock<Option<Arc<dyn MainWindow>>>,
+    // pub window: RwLock<Option<Arc<dyn MainWindow>>>,
 }
 
 impl SiloImpl {
@@ -50,7 +52,7 @@ impl SiloImpl {
             data_sources: RwLock::new(vec![]),
             // connections: HashMap::new(),
             plugin_mgr: Arc::new(pm),
-            window: RwLock::new(None),
+            // window: RwLock::new(None),
         };
     }
 
@@ -138,15 +140,15 @@ impl Silo for SiloImpl {
         self.initialize_plugins();
     }
 
-    fn set_window(&self, window: Arc<dyn MainWindow>) {
-        info!("SiloImpl::set_window()");
-
-        if let Ok(mut self_window) = self.window.write() {
-            *self_window = Some(window);
-        } else {
-            error!("SiloImpl::set_window(): unable to obtain write access to window property");
-        }
-    }
+    //     fn set_window(&self, window: Arc<dyn MainWindow>) {
+    //         info!("SiloImpl::set_window()");
+    //
+    //         if let Ok(mut self_window) = self.window.write() {
+    //             *self_window = Some(window);
+    //         } else {
+    //             error!("SiloImpl::set_window(): unable to obtain write access to window property");
+    //         }
+    //     }
 
     fn sources(&self) -> Vec<DataSource> {
         // return self.data_sources.clone().into_inner().unwrap();
@@ -165,7 +167,7 @@ impl Silo for SiloImpl {
         return self.plugin_mgr.clone();
     }
 
-    async fn show_password_dialog(&self) -> String {
+    fn show_password_dialog(&self, sender: Sender<PasswordDialogResult>) -> String {
         info!("SiloImpl::show_password_dialog()");
 
         return String::from("");

@@ -49,7 +49,7 @@ impl ApplicationImpl for AppImpl {
         let window = AppWindow::new(&app);
         if let Some(silo) = self.silo.borrow().as_ref() {
             window.set_silo(silo);
-            silo.set_window(Arc::new(window.clone()));
+            // silo.set_window(Arc::new(window.clone()));
         } else {
             error!("Silo not set");
         }

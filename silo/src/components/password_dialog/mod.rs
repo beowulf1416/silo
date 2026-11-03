@@ -15,15 +15,16 @@ glib::wrapper! {
 }
 
 impl PasswordDialog {
-    pub fn new(parent: &AppWindow) -> Self {
+    pub fn new() -> Self {
         info!("PasswordDialog::new()");
 
         let mut builder = glib::Object::builder();
-        if let Some(app) = parent.application() {
-            builder = builder.property("application", app);
-        } else {
-            error!("PasswordDialog::new() unable to set application property on window object");
-        }
+
+        // if let Some(app) = parent.application() {
+        //     builder = builder.property("application", app);
+        // } else {
+        //     error!("PasswordDialog::new() unable to set application property on window object");
+        // }
 
         let window = builder.build();
         return window;
