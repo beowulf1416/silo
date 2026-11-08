@@ -1,5 +1,6 @@
 mod node;
 
+use gtk::prelude::GtkWindowExt;
 use silo_api::PasswordDialogResult;
 use silo_api::plugin::Plugin;
 use sqlx::{Pool, postgres::PgPoolOptions};
@@ -50,33 +51,33 @@ impl PostgresPlugin {
                 let (sender, receiver) = async_channel::unbounded::<AppWindowMessages>();
                 let silo_clone = Arc::clone(silo);
 
-                // todo: how to ask for password?
-                let result = silo.show_password_dialog(sender);
-                debug!(
-                    "PostgresPlugin::create_connection() show_password_dialog result: {:?}",
-                    result
-                );
-
-                match receiver.recv().await {
-                    Err(e) => {
-                        error!("PostgresPlugin::create_connection() error: {:?}", e);
-                    }
-                    Ok(result) => {
-                        debug!("PostgresPlugin::create_connection() result: {:?}", result);
-                    }
-                }
-            //                 let handle = get_runtime().spawn(async move {
-            //                     let result = silo_clone.show_password_dialog();
-            //                 });
-            //
-            //                 match handle.await {
-            //                     Err(e) => {
-            //                         error!("PostgresPlugin::create_connection() error: {:?}", e);
-            //                     }
-            //                     Ok(result) => {
-            //                         debug!("result: {:?}", result);
-            //                     }
-            //                 }
+                //                 // todo: how to ask for password?
+                //                 let result = silo.show_password_dialog(sender);
+                //                 debug!(
+                //                     "PostgresPlugin::create_connection() show_password_dialog result: {:?}",
+                //                     result
+                //                 );
+                //
+                //                 match receiver.recv().await {
+                //                     Err(e) => {
+                //                         error!("PostgresPlugin::create_connection() error: {:?}", e);
+                //                     }
+                //                     Ok(result) => {
+                //                         debug!("PostgresPlugin::create_connection() result: {:?}", result);
+                //                     }
+                //                 }
+                //             //                 let handle = get_runtime().spawn(async move {
+                //             //                     let result = silo_clone.show_password_dialog();
+                //             //                 });
+                //             //
+                //             //                 match handle.await {
+                //             //                     Err(e) => {
+                //             //                         error!("PostgresPlugin::create_connection() error: {:?}", e);
+                //             //                     }
+                //             //                     Ok(result) => {
+                //             //                         debug!("result: {:?}", result);
+                //             //                     }
+                //             //                 }
             } else {
                 error!("PostgresPlugin::create_connection(): Silo object is empty");
             }
@@ -112,8 +113,12 @@ impl Plugin for PostgresPlugin {
         }
     }
 
-    fn initialize(&self, source: &DataSource) {
-        info!("PostgresPlugin::initialize()");
+    fn register_source(&self, source: &DataSource) {
+        info!("PostgresPlugin::register_source()");
+
+        // if let Ok(mut rw_silo) = self.silo.write() {
+        //     *rw_silo = Some(silo);
+        // }
 
         let dsn = source.data_source_name.clone();
         if let Ok(mut sources) = self.sources.write() {
@@ -126,25 +131,66 @@ impl Plugin for PostgresPlugin {
 
         let dsn = node.data_source_name().clone();
 
-        // get connection
-        if let Ok(cns) = self.connections.read() {
-            if let Some(cn) = cns.get(&dsn) {
-                todo!();
-            } else {
-                // create connection
-                if let Ok(sources) = self.sources.read() {
-                    if let Some(source) = sources.get(&dsn) {
-                        self.create_connection(source);
-                    } else {
-                        error!("PostgresPlugin::get_child_nodes() unable to read data source");
-                    }
-                } else {
-                    error!("PostgresPlugin::get_child_nodes() unable to read sources");
-                }
+        let connection_exists = match self.connections.read() {
+            Err(e) => {
+                error!(
+                    "PostgresPlugin::get_child_nodes() obtain connections: {:?}",
+                    e
+                );
+                return vec![];
             }
+            Ok(cns) => cns.contains_key(&dsn),
+        };
+
+        if connection_exists {
+            // get connection
+            todo!();
         } else {
-            error!("PostgresPlugin::get_child_nodes(): unable obtain connections");
+            // create connection
+            let source = match self.sources.read() {
+                Err(e) => {
+                    error!(
+                        "PostgresPlugin::get_child_nodes() unable to obtain sources {:?}",
+                        e
+                    );
+                    return vec![];
+                }
+                Ok(sources) => {
+                    debug!("PostgresPlugin::get_child_nodes() sources {:?}", sources);
+                    if let Some(source) = sources.get(&dsn) {
+                        source.clone()
+                    } else {
+                        error!(
+                            "PostgresPlugin::get_child_nodes() '{}' data source does not exist",
+                            dsn
+                        );
+                        return vec![];
+                    }
+                }
+            };
+
+            self.create_connection(&source).await;
         }
+
+        // // get connection
+        // if let Ok(cns) = self.connections.read() {
+        //     if let Some(cn) = cns.get(&dsn) {
+        //         todo!();
+        //     } else {
+        //         // create connection
+        //         if let Ok(sources) = self.sources.read() {
+        //             if let Some(source) = sources.get(&dsn) {
+        //                 self.create_connection(source).await;
+        //             } else {
+        //                 error!("PostgresPlugin::get_child_nodes() unable to read data source");
+        //             }
+        //         } else {
+        //             error!("PostgresPlugin::get_child_nodes() unable to read sources");
+        //         }
+        //     }
+        // } else {
+        //     error!("PostgresPlugin::get_child_nodes(): unable obtain connections");
+        // }
 
         // todo!();
         return vec![];

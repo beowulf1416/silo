@@ -1,5 +1,6 @@
 mod config;
 mod plugin_manager;
+pub mod silo;
 
 use silo_api::plugin::Plugin;
 // use silo_api::{AppWindowMessages, data_sources};
@@ -19,7 +20,7 @@ use silo_api::{
     plugin::PluginManager, window::MainWindow,
 };
 
-use crate::config::DataSourceConfig;
+// use crate::config::DataSourceConfig;
 use crate::plugin_manager::PluginManagerImpl;
 
 pub struct ConnectionData {}
@@ -47,6 +48,7 @@ impl SiloImpl {
         let mut pm = PluginManagerImpl::new();
 
         let plugin = postgres_plugin::PostgresPlugin::new();
+
         let _result = pm.register(Arc::new(plugin));
 
         return SiloImpl {
@@ -111,11 +113,16 @@ impl SiloImpl {
         vec![]
     }
 
+    // fn to_Arc(&self) -> Arc<dyn Silo> {
+    //     let silo: Arc<dyn Silo> = Arc::new(self);
+    //     return silo;
+    // }
+
     fn initialize_plugins(&self) {
         info!("SiloImpl::initialize_plugins()");
 
         if let Ok(sources) = self.data_sources.read() {
-            self.plugin_mgr.initialize_plugins(&sources);
+            // self.plugin_mgr.initialize_plugins(self.to_Arc(), &sources);
         } else {
             error!("SiloImpl::initialize(): unable to read data sources");
         }
@@ -128,7 +135,7 @@ impl Silo for SiloImpl {
         info!("SiloImpl::initialize");
     }
 
-    fn set_workspace_path(&self, path: &str) {
+    fn set_workspace_path(&mut self, path: &str) {
         info!("SiloImpl::set_workspace_path");
         // self.workspace_path.replace(Some(String::from(path)));
         if let Ok(rw_path) = self.workspace_path.write() {
@@ -143,16 +150,16 @@ impl Silo for SiloImpl {
         self.initialize_plugins();
     }
 
-    fn set_sender(&self, sender: Sender<AppWindowMessages>) {
-        info!("SiloImpl::set_sender()");
-
-        if let Ok(rw_sender) = self.sender.write() {
-            let mut self_sender = rw_sender;
-            *self_sender = Some(sender);
-        } else {
-            error!("SiloImpl::set_sender() unable to obtain write access to sender");
-        }
-    }
+    //     fn set_sender(&self, sender: Sender<AppWindowMessages>) {
+    //         info!("SiloImpl::set_sender()");
+    //
+    //         if let Ok(rw_sender) = self.sender.write() {
+    //             let mut self_sender = rw_sender;
+    //             *self_sender = Some(sender);
+    //         } else {
+    //             error!("SiloImpl::set_sender() unable to obtain write access to sender");
+    //         }
+    //     }
 
     //     fn set_window(&self, window: Arc<dyn MainWindow>) {
     //         info!("SiloImpl::set_window()");
@@ -181,20 +188,20 @@ impl Silo for SiloImpl {
         return self.plugin_mgr.clone();
     }
 
-    fn show_password_dialog(&self, sender: Sender<AppWindowMessages>) -> String {
-        info!("SiloImpl::show_password_dialog()");
-
-        if let Ok(rw_sender) = self.sender.read() {
-            let self_sender = rw_sender.clone();
-            if let Some(o_sender) = self_sender {
-                let _result = o_sender.send(AppWindowMessages::ShowPasswordDialog);
-            } else {
-                error!("SiloImpl::show_password_dialog() sender not set");
-            }
-        } else {
-            error!("SiloImpl::show_password_dialog() unable to obtain read access to sender");
-        }
-
-        return String::from("");
-    }
+    //     fn show_password_dialog(&self, sender: Sender<AppWindowMessages>) -> String {
+    //         info!("SiloImpl::show_password_dialog()");
+    //
+    //         if let Ok(rw_sender) = self.sender.read() {
+    //             let self_sender = rw_sender.clone();
+    //             if let Some(o_sender) = self_sender {
+    //                 let _result = o_sender.send(AppWindowMessages::ShowPasswordDialog);
+    //             } else {
+    //                 error!("SiloImpl::show_password_dialog() sender not set");
+    //             }
+    //         } else {
+    //             error!("SiloImpl::show_password_dialog() unable to obtain read access to sender");
+    //         }
+    //
+    //         return String::from("");
+    //     }
 }

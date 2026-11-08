@@ -11,5 +11,7 @@ async-channel = "*"
 sqlx = { version = "*", features = ["postgres", "uuid", "chrono", "macros", "runtime-tokio", "tls-rustls"] }
 tokio = { version = "*", features = ["full"] }
 
+gtk = { version = "*", package = "gtk4", features = ["v4_22"] }
+
 # projects
 silo-api = { path = "../../silo-api" }

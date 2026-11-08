@@ -1256,6 +1256,7 @@ version = "0.1.0"
 dependencies = [
  "async-channel",
  "async-trait",
+ "gtk4",
  "silo-api",
  "sqlx",
  "tokio",

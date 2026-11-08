@@ -125,10 +125,12 @@ impl DataExplorerImpl {
             //     &s.data_source_name,
             // ));
 
+            let plugin = silo.plugin_manager().get_plugin(&s.plugin);
+
             let mut node = NodeImpl::new(
                 &s.name,
                 NodeType::DataSource,
-                &s.plugin,
+                plugin,
                 &s.data_source_name,
                 &s.data_source_name,
             );

@@ -39,9 +39,9 @@ impl AppWindowImpl {
         let (sender, receiver) = async_channel::unbounded::<AppWindowMessages>();
         self.sender.replace(Some(sender.clone()));
 
-        if let Some(mut silo) = self.silo.borrow_mut().as_ref() {
-            silo.set_sender(sender.clone());
-        }
+        // if let Some(mut silo) = self.silo.borrow_mut().as_ref() {
+        //     silo.set_sender(sender.clone());
+        // }
 
         glib::MainContext::default().spawn_local(glib::clone!(
             #[weak(rename_to = window)]

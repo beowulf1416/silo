@@ -1,9 +1,11 @@
 use std::sync::Arc;
 use std::vec::Vec;
+use tracing::{debug, error};
 
 use silo_api::{
     Silo,
     node::{Node, NodeType},
+    plugin::Plugin,
 };
 
 // use crate::components::app_window::AppWindow;
@@ -13,7 +15,7 @@ pub struct NodeImpl {
     pub name: String,
     pub node_type: NodeType,
     pub children: Option<Vec<Arc<dyn Node>>>,
-    pub plugin: String,
+    pub plugin: Option<Arc<dyn Plugin>>,
     pub dsn: String,
     pub connection: String,
     pub silo: Option<Arc<dyn Silo>>,
@@ -23,7 +25,7 @@ impl NodeImpl {
     pub fn new(
         name: &String,
         node_type: NodeType,
-        plugin: &String,
+        plugin: Option<Arc<dyn Plugin>>,
         dsn: &String,
         connection: &String,
     ) -> Self {
@@ -49,7 +51,7 @@ impl Node for NodeImpl {
         return self.node_type.clone();
     }
 
-    fn plugin(&self) -> String {
+    fn plugin(&self) -> Option<Arc<dyn Plugin>> {
         return self.plugin.clone();
     }
 
@@ -68,14 +70,35 @@ impl Node for NodeImpl {
     async fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
         // let parent_node: Arc<dyn Node> = Arc::new(self);
         // let nodes = silo.as_ref().plugin_manager().get_child_nodes(self);
-        let pm = self
-            .silo
-            .clone()
-            .expect("expected silo object")
-            .as_ref()
-            .plugin_manager();
-        let nodes = pm.get_child_nodes(self).await;
-        return nodes;
+
+        // let pm = self
+        //     .silo
+        //     .clone()
+        //     .expect("expected silo object")
+        //     .as_ref()
+        //     .plugin_manager();
+        // let nodes = pm.get_child_nodes(self).await;
+        // return nodes;
+        //
+
+        if let Some(plugin) = self.plugin.clone() {
+            let result = plugin.get_child_nodes(self).await;
+            debug!("NodeImpl::children() result {:?}", result);
+            // match plugin.get_child_nodes(self).await {
+            //     Err(e) => {
+            //         error!("NodeImpl::children() unable to obtain nodes {:?}", e);
+            //         return None;
+            //     }
+            //     Ok(result) => {
+            //         debug!("result {:?}", result);
+            //         return None;
+            //     }
+            // }
+        } else {
+            error!("NodeImpl::children() unable to obtain plugin for node");
+        }
+
+        return None;
     }
 }
 
@@ -92,8 +115,8 @@ impl Node for LoadingNode {
         return NodeType::Loading;
     }
 
-    fn plugin(&self) -> String {
-        return String::from("default");
+    fn plugin(&self) -> Option<Arc<dyn Plugin>> {
+        return None;
     }
 
     fn data_source_name(&self) -> String {

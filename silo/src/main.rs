@@ -24,14 +24,20 @@ fn main() {
 
     info!("Starting silo...");
 
-    let silo: Arc<dyn Silo> = Arc::new(SiloImpl::new());
-    silo.initialize();
-
     let workspace_path = get_last_workspace_path();
-    info!("workspace_path: {}", workspace_path);
+
+    let mut silo = silo_base::silo::SiloImpl::new();
+    silo.initialize();
     silo.set_workspace_path(&workspace_path);
 
-    let app = App::new(silo);
+    //     // let silo: Arc<dyn Silo> = Arc::new(SiloImpl::new());
+    //     let mut silo: Arc<dyn Silo> = Arc::new(silo_base::silo::SiloImpl::new());
+    //     silo.initialize();
+    //
+    //     // info!("workspace_path: {}", workspace_path);
+    //     silo.set_workspace_path(&workspace_path);
+
+    let app = App::new(Arc::new(silo));
     app.run();
 }
 
