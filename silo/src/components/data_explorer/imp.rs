@@ -5,7 +5,9 @@ use tracing::{debug, error, info};
 
 use silo_api::{
     Silo,
+    data_sources::DataSource,
     node::{Node, NodeType},
+    plugin::Plugin,
 };
 
 use crate::app::App;
@@ -65,6 +67,8 @@ impl DataExplorerImpl {
     }
 
     pub fn build_tree(&self) -> gtk::Box {
+        info!("DataExplorerImpl::build_tree()");
+
         let model = gtk::TreeListModel::new(self.store.clone(), false, false, move |obj| {
             let boxed = obj
                 .downcast_ref::<glib::BoxedAnyObject>()
@@ -110,21 +114,14 @@ impl DataExplorerImpl {
     }
 
     pub fn set_silo(&self, silo: &Arc<dyn Silo>) {
-        info!("DataExplorerImp::set_silo");
+        info!("DataExplorerImpl::set_silo");
 
         let silo_clone = Arc::clone(&silo);
 
-        self.silo.replace(Some(Arc::clone(silo)));
+        // self.silo.replace(Some(Arc::clone(silo)));
 
         let sources = silo_clone.sources();
         for s in sources {
-            // let mut node: Arc<dyn Node> = Arc::new(NodeImpl::new(
-            //     &s.name,
-            //     NodeType::DataSource,
-            //     &s.plugin,
-            //     &s.data_source_name,
-            // ));
-
             let plugin = silo.plugin_manager().get_plugin(&s.plugin);
 
             let mut node = NodeImpl::new(
@@ -134,21 +131,30 @@ impl DataExplorerImpl {
                 &s.data_source_name,
                 &s.data_source_name,
             );
-            node.set_silo(Arc::clone(&silo_clone));
+            // node.set_silo(Arc::clone(&silo_clone));
             let arc_dyn_node: Arc<dyn Node> = Arc::new(node);
 
             self.store.append(&glib::BoxedAnyObject::new(arc_dyn_node));
         }
     }
 
-    pub fn build_name_column(&self) -> gtk::ColumnViewColumn {
-        // let silo = self.silo.borrow().as_ref().expect("Silo not set");
+    pub fn register_source(&self, source: &DataSource, plugin: Option<Arc<dyn Plugin>>) {
+        info!("DataExplorerImpl::register_source");
 
-        // let silo = {
-        //     let s = self.silo.borrow();
-        //     let s = s.as_ref().expect("Silo is not set");
-        //     s.clone()
-        // };
+        let node = NodeImpl::new(
+            &source.name,
+            NodeType::DataSource,
+            plugin,
+            &source.data_source_name,
+            &source.data_source_name,
+        );
+
+        let arc_node: Arc<dyn Node> = Arc::new(node);
+        self.store.append(&glib::BoxedAnyObject::new(arc_node));
+    }
+
+    pub fn build_name_column(&self) -> gtk::ColumnViewColumn {
+        info!("DataExplorerImpl::build_name_column()");
 
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_factory, item| {
@@ -175,6 +181,8 @@ impl DataExplorerImpl {
 
             // let silo_clone = silo.clone();
             row.connect_notify(Some("expanded"), move |row, _| {
+                info!("DataExplorerImpl row.connect_notify()");
+
                 if row.is_expanded() {
                     info!("row is expanded");
 
@@ -192,31 +200,22 @@ impl DataExplorerImpl {
                                 Arc::clone(&node_ref)
                             };
 
-                            // let silo = self
-                            //     .silo
-                            //     .borrow()
-                            //     .as_ref()
-                            //     .expect("unable to obtain silo object");
-
-                            // let value = silo_clone.clone();
-                            let handle = get_runtime().spawn(async move {
-                                // let child_nodes = node.children(Arc::clone(silo)).await;
-                                // child_nodes
-                                let child_nodes = node.children().await;
-                                child_nodes
-                            });
-
-                            glib::MainContext::default().spawn_local(async move {
-                                match handle.await {
-                                    Err(e) => {
-                                        error!("error {:?}", e);
-                                    }
-                                    Ok(result) => {
-                                        debug!("result {:?}", result);
-                                        // store.remove_all();
-                                    }
-                                }
-                            });
+                        //                             let handle = get_runtime().spawn(async move {
+                        //                                 let child_nodes = node.children().await;
+                        //                                 child_nodes
+                        //                             });
+                        //
+                        //                             glib::MainContext::default().spawn_local(async move {
+                        //                                 match handle.await {
+                        //                                     Err(e) => {
+                        //                                         error!("error {:?}", e);
+                        //                                     }
+                        //                                     Ok(result) => {
+                        //                                         debug!("result {:?}", result);
+                        //                                         // store.remove_all();
+                        //                                     }
+                        //                                 }
+                        //                             });
                         } else {
                             error!("unable to retrieve child list store");
                         }
@@ -226,14 +225,6 @@ impl DataExplorerImpl {
                 } else {
                     info!("row is collapsed");
                 }
-
-                //                 let obj = row
-                //                     .item()
-                //                     .and_downcast::<glib::BoxedAnyObject>()
-                //                     .expect("expecting BoxedAnyObject");
-                //
-                //                 let node = obj.borrow::<Arc<dyn Node>>();
-                //                 debug!("node (connect_notify) {:?}", node);
             });
 
             let expander = litem
@@ -268,6 +259,8 @@ impl DataExplorerImpl {
 
 impl Default for DataExplorerImpl {
     fn default() -> Self {
+        info!("DataExplorerImpl::default()");
+
         return Self {
             silo: RefCell::new(None),
             window: RefCell::new(None),

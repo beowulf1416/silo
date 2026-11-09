@@ -31,6 +31,13 @@ impl PluginManager for PluginManagerImpl {
         return Ok(());
     }
 
+    fn plugins(&self) -> Vec<Arc<dyn Plugin>> {
+        info!("PluginManagerImpl::plugins()");
+
+        let plugins: Vec<Arc<dyn Plugin>> = self.plugins.clone().into_values().collect();
+        return plugins;
+    }
+
     //     fn initialize_plugins(&self, silo: Arc<dyn Silo>, sources: &Vec<DataSource>) {
     //         info!("PluginManagerImpl::initialize_plugins()");
     //

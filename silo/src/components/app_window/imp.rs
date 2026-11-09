@@ -28,10 +28,20 @@ impl AppWindowImpl {
 
         self.silo.replace(Some(Arc::clone(silo)));
 
+        // if let Some(explorer) = self.explorer.borrow().as_ref() {
+        //     explorer.set_silo(Arc::clone(silo));
+        // } else {
+        //     error!("DataExplorer not set");
+        // }
+
         if let Some(explorer) = self.explorer.borrow().as_ref() {
-            explorer.set_silo(Arc::clone(silo));
+            for s in silo.sources() {
+                let plugin = silo.plugin_manager().get_plugin(&s.plugin);
+
+                explorer.register_source(&s, plugin);
+            }
         } else {
-            error!("DataExplorer not set");
+            error!("AppWindowImpl::set_silo() unable to borrow DataExplorer");
         }
     }
 

@@ -70,6 +70,11 @@ impl SiloImpl {
     fn initialize_plugins(&self) {
         info!("SiloImpl::initialize_plugins()");
 
+        let silo: Arc<dyn Silo> = Arc::new(self.clone());
+        for plugin in self.plugin_mgr.plugins() {
+            plugin.set_silo(silo.clone());
+        }
+
         for s in self.data_sources.clone() {
             if let Some(plugin) = self.plugin_mgr.get_plugin(&s.plugin) {
                 plugin.register_source(&s);

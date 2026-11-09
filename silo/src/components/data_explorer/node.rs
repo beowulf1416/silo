@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use std::vec::Vec;
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 use silo_api::{
     Silo,
@@ -18,7 +18,7 @@ pub struct NodeImpl {
     pub plugin: Option<Arc<dyn Plugin>>,
     pub dsn: String,
     pub connection: String,
-    pub silo: Option<Arc<dyn Silo>>,
+    // pub silo: Option<Arc<dyn Silo>>,
 }
 
 impl NodeImpl {
@@ -29,6 +29,8 @@ impl NodeImpl {
         dsn: &String,
         connection: &String,
     ) -> Self {
+        info!("NodeImpl::new()");
+
         return Self {
             name: name.clone(),
             dsn: dsn.clone(),
@@ -36,7 +38,7 @@ impl NodeImpl {
             children: None,
             plugin: plugin.clone(),
             connection: connection.clone(),
-            silo: None,
+            // silo: None,
         };
     }
 }
@@ -60,14 +62,19 @@ impl Node for NodeImpl {
     }
 
     fn set_silo(&mut self, silo: Arc<dyn Silo>) {
-        self.silo = Some(silo);
+        info!("NodeImpl::set_silo()");
+        // self.silo = Some(silo);
     }
 
     fn silo(&self) -> Option<Arc<dyn Silo>> {
-        return self.silo.clone();
+        info!("NodeImpl::silo()");
+        // return self.silo.clone();
+        return None;
     }
 
     async fn children(&self) -> Option<Vec<Arc<dyn Node>>> {
+        info!("NodeImpl::children()");
+
         // let parent_node: Arc<dyn Node> = Arc::new(self);
         // let nodes = silo.as_ref().plugin_manager().get_child_nodes(self);
 

@@ -14,6 +14,7 @@ pub trait Plugin: std::fmt::Debug + Send + Sync {
 pub trait PluginManager: std::fmt::Debug + Send + Sync {
     fn register(&mut self, plugin: Arc<dyn Plugin>) -> Result<(), SiloError>;
     // fn initialize_plugins(&self, silo: Arc<dyn Silo>, sources: &Vec<DataSource>);
+    fn plugins(&self) -> Vec<Arc<dyn Plugin>>;
     fn get_plugin(&self, plugin_name: &str) -> Option<Arc<dyn Plugin>>;
     // async fn get_child_nodes(&self, node: &dyn Node) -> Option<Vec<Arc<dyn Node>>>;
     async fn process_query(&self, plugin: &str, query: &str) -> Result<(), SiloError>;

@@ -7,7 +7,9 @@ use tracing::{debug, error, info};
 
 use silo_api::{
     Silo,
+    data_sources::DataSource,
     node::{Node, NodeType},
+    plugin::Plugin,
 };
 
 use crate::app::App;
@@ -54,5 +56,12 @@ impl DataExplorer {
 
         let imp = self.imp();
         imp.set_silo(&silo);
+    }
+
+    pub fn register_source(&self, source: &DataSource, plugin: Option<Arc<dyn Plugin>>) {
+        info!("DataExplorer::register_source()");
+
+        let imp = self.imp();
+        imp.register_source(source, plugin);
     }
 }
